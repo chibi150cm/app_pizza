@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">The Pixzeleria</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_menu">Menú</string>
+    <string name="nav_cart">Carrito</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- General -->
+    <string name="add_to_cart">Agregar al Carrito</string>
+    <string name="checkout">Finalizar Pedido</string>
+    <string name="back">Volver</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="delete">Eliminar</string>
+
+    <!-- Validation -->
+    <string name="field_required">Este campo es requerido</string>
+    <string name="invalid_email">Email inválido</string>
+    <string name="invalid_phone">Teléfono inválido</string>
+
+    <!-- Cart -->
+    <string name="empty_cart">Tu carrito está vacío</string>
+    <string name="cart_total">Total</string>
+    <string name="delivery_fee">Delivery</string>
+
+    <!-- Orders -->
+    <string name="no_orders">No tienes pedidos aún</string>
+    <string name="order_placed">Pedido realizado exitosamente</string>
+
+    <!-- Profile -->
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="profile_saved">Perfil guardado exitosamente</string>
+</resources>
