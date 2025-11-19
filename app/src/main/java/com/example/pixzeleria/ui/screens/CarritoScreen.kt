@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.pixzeleria.data.model.Carrito
 import com.example.pixzeleria.ui.viewmodel.MainViewModel
@@ -168,7 +169,7 @@ fun CartItemCard(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Eliminar producto") },
-            text = { Text("¿Estás seguro que deseas eliminar ${carrito.pizza.nombrePizza} del carrito?") },
+            text = { Text("¿Estás seguro que deseas eliminar ${carrito.pizza.nombrePizza} del carrito? Igual ta rica") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -327,6 +328,7 @@ fun CarroBottomBar(
     }
 }
 
+@Preview(showBackground = true)
 @Composable
 fun CarroVacioView(modifier: Modifier = Modifier) {
     Box(

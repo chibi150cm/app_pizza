@@ -11,13 +11,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import kotlin.text.Typography
-import com.example.pixzeleria.ui.theme.Typography
 
 // Colores de la marca Pixzeleria
-private val PrimaryColor = Color(0xFF6891A8) // Rojo pizza
-private val SecondaryColor = Color(0xFFB2DBE2) // Naranja cálido
-private val TertiaryColor = Color(0xFF59D0E0) // Verde para éxito
+private val PrimaryColor = Color(0xFF6891A8)
+private val SecondaryColor = Color(0xFF42666C)
+private val TertiaryColor = Color(0xFF59D0E0)
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryColor,

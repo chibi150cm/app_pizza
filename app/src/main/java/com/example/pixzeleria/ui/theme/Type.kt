@@ -15,11 +15,11 @@ import com.pixzeleria.R
 import org.w3c.dom.Text
 
 val PixelFont = FontFamily(
-    Font(R.font.press_start_2p_regular, FontWeight.Normal)
+    Font(R.font.press_start_2p_regular, FontWeight.Thin)
 )
 
 val PixelFont2 = FontFamily(
-    Font(R.font.vt323_regular, FontWeight.Normal)
+    Font(R.font.vt323_regular, FontWeight.Thin)
 )
 
 val PixelFont3 = FontFamily(
@@ -56,17 +56,17 @@ val Typography = Typography(
         letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle( // Tamaño de "Da Pixzeleria" / Bienvenido /
-        fontFamily = PixelFont3,
+        fontFamily = PixelFont2,
         fontWeight = FontWeight.Normal,
         fontSize = 28.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.sp
     ),
     headlineSmall = TextStyle( // Tamaño de "Pizzas destacadas"
-        fontFamily = PixelFont3,
+        fontFamily = PixelFont2,
         fontWeight = FontWeight.Normal,
-        fontSize = 28.sp,
-        lineHeight = 18.sp,
+        fontSize = 32.sp,
+        lineHeight = 24.sp,
         letterSpacing = 0.sp
     ),
     titleLarge = TextStyle( // El texto del head de manú / carrito / perfil
@@ -91,14 +91,14 @@ val Typography = Typography(
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle( // Ingredientes, pero al pinchar la pizza en el menú
-        fontFamily = PixelFont3,
+        fontFamily = PixelFont2,
         fontWeight = FontWeight.Normal,
-        fontSize = 21.sp,
+        fontSize = 24.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = PixelFont3,
+        fontFamily = PixelFont2,
         fontWeight = FontWeight.Normal,
         fontSize = 24.sp,
         lineHeight = 24.sp,
@@ -114,21 +114,21 @@ val Typography = Typography(
     labelLarge = TextStyle( // Tamaño de los botones
         fontFamily = PixelFont2,
         fontWeight = FontWeight.Medium,
-        fontSize = 24.sp,
+        fontSize = 20.sp,
         lineHeight = 10.sp,
         letterSpacing = 0.sp
     ),
-    labelMedium = TextStyle(
+    labelMedium = TextStyle( // Texto abajo en el nav buttom
         fontFamily = PixelFont3,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle( // Tamaño del circulito de notificación
         fontFamily = PixelFont3,
         fontWeight = FontWeight.Thin,
-        fontSize = 14.sp,
+        fontSize = 16.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.sp
     )

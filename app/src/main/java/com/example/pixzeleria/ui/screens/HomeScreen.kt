@@ -165,7 +165,7 @@ fun HeroBanner(onNavigateToMenu: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Las mejores pixzas artesanales!",
+                    "Lleve de lo bueno caballero de lo bueno",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.9f)
                 )
