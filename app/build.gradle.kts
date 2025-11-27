@@ -88,4 +88,20 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Para convertir JSON a Objetos
+
+    // Corrutinas (porsiacaso):
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    //Pa la API
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Test
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8") // Para simular objetos
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // Para probar corrutinas
+    testImplementation("androidx.arch.core:core-testing:2.2.0") // Para que LiveData/StateFlow no moleste
 }

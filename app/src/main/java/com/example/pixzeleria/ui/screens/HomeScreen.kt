@@ -28,6 +28,7 @@ import com.example.pixzeleria.ui.viewmodel.MainViewModel
 import com.example.pixzeleria.utils.ImageUtils
 import java.text.NumberFormat
 import java.util.*
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +40,9 @@ fun HomeScreen(
     val pizzas by viewModel.pizzas.collectAsState()
     val cartItemCount by viewModel.cartItemCount.collectAsState()
 
-    // Animación de entrada re piola
+    val pokeNombre by viewModel.pokemonNombre.collectAsState()
+    val pokeImagen by viewModel.pokemonImagen.collectAsState()
+
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
@@ -59,9 +62,7 @@ fun HomeScreen(
                     if (cartItemCount > 0) {
                         BadgedBox(
                             badge = {
-                                Badge {
-                                    Text(cartItemCount.toString())
-                                }
+                                Badge { Text(cartItemCount.toString()) }
                             }
                         ) {
                             IconButton(onClick = { /* Navegar al carrito */ }) {
@@ -82,17 +83,20 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Hero Banner con animación piola
+            // Hero banner con datos del Pokemon
             AnimatedVisibility(
                 visible = visible,
                 enter = slideInVertically() + fadeIn()
             ) {
-                HeroBanner(onNavigateToMenu)
+                HeroBanner(
+                    onNavigateToMenu = onNavigateToMenu,
+                    pokemonName = pokeNombre,
+                    pokemonImage = pokeImagen
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Categorías
             Categorias()
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -121,7 +125,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Sale su promo
             PromoSeccion()
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -130,20 +133,21 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeroBanner(onNavigateToMenu: () -> Unit) {
+fun HeroBanner(
+    onNavigateToMenu: () -> Unit,
+    pokemonName: String,
+    pokemonImage: String
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .height(200.dp),
+            .padding(16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
@@ -155,30 +159,63 @@ fun HeroBanner(onNavigateToMenu: () -> Unit) {
                 .padding(24.dp)
         ) {
             Column(
-                modifier = Modifier.align(Alignment.CenterStart),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp) // Espacio entre la info y el botón
             ) {
-                Text(
-                    "¡Bienvenido!",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Lleve de lo bueno caballero de lo bueno",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                // Texto a la izquierda, Pokemon a la derecha
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Texto
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "¡Bienvenido!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        val textoDescripcion = if (pokemonName.isNotEmpty()) {
+                            "¡Este $pokemonName del día te invita a revisar nuestras pizzas!"
+                        } else {
+                            "Cargando al empleado del mes..."
+                        }
+
+                        Text(
+                            text = textoDescripcion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Imagen del Pokémon
+                    if (pokemonImage.isNotEmpty()) {
+                        AsyncImage(
+                            model = pokemonImage,
+                            contentDescription = "Pokémon del día",
+                            modifier = Modifier.size(150.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
+
                 Button(
                     onClick = onNavigateToMenu,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
                         contentColor = MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Ver Menú")
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
                 }
             }

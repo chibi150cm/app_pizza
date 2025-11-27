@@ -116,7 +116,16 @@ fun MainScreen(viewModel: MainViewModel) {
             composable(Screen.Home.route) {
                 HomeScreen(
                     viewModel = viewModel,
-                    onNavigateToMenu = { navController.navigate(Screen.Menu.route) },
+                    onNavigateToMenu = {
+                        navController.navigate(Screen.Menu.route) {
+                            popUpTo(Screen.Home.route) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+
                     onNavigateToPizza = { pizzaId ->
                         navController.navigate(Screen.PizzaDetail.createRoute(pizzaId))
                     }

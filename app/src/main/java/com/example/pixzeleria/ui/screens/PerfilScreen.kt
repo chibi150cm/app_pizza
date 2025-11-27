@@ -5,12 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke // Importante para el borde rojo
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +33,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
-    viewModel: MainViewModel,
+    viewModel: MainViewModel, // <- Aquí recibes el viewModel
     onNavigateToOrders: () -> Unit
 ) {
     val usuario by viewModel.usuario.collectAsState()
@@ -68,7 +70,7 @@ fun PerfilScreen(
         direccionError = validations["address"]?.toErrorMessage()
 
         if (validations.values.all { it.isValid }) {
-            viewModel.guardarUsuario(User(nombreU, emailU, telefonoU, direccionU))
+            viewModel.actualizarPerfil(User(nombreU, emailU, telefonoU, direccionU))
             editando = false
             mostrarGuardado = true
             return true
@@ -233,72 +235,9 @@ fun PerfilScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    OutlinedTextField(
-                        value = emailU,
-                        onValueChange = {
-                            emailU = it
-                            emailError = null
-                        },
-                        label = { Text("Correo electrónico") },
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                        enabled = editando,
-                        isError = emailError != null,
-                        supportingText = emailError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = telefonoU,
-                        onValueChange = {
-                            telefonoU = it
-                            telefonoError = null
-                        },
-                        label = { Text("Teléfono") },
-                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
-                        enabled = editando,
-                        isError = telefonoError != null,
-                        supportingText = telefonoError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = direccionU,
-                        onValueChange = {
-                            direccionU = it
-                            direccionError = null
-                        },
-                        label = { Text("Dirección") },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                        enabled = editando,
-                        isError = direccionError != null,
-                        supportingText = direccionError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        minLines = 2,
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    OutlinedTextField(value = emailU, onValueChange = { emailU = it; emailError = null }, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) }, enabled = editando, isError = emailError != null, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = telefonoU, onValueChange = { telefonoU = it; telefonoError = null }, label = { Text("Teléfono") }, leadingIcon = { Icon(Icons.Default.Phone, null) }, enabled = editando, isError = telefonoError != null, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = direccionU, onValueChange = { direccionU = it; direccionError = null }, label = { Text("Dirección") }, leadingIcon = { Icon(Icons.Default.LocationOn, null) }, enabled = editando, isError = direccionError != null, modifier = Modifier.fillMaxWidth())
                 }
             }
 
@@ -315,27 +254,7 @@ fun PerfilScreen(
                         subtitle = "${pedidos.size} pedidos realizados",
                         onClick = onNavigateToOrders
                     )
-
-                    Divider()
-
-                    PerfilMenuItem(
-                        icon = Icons.Default.Favorite,
-                        title = "Mis Favoritos",
-                        subtitle = "${favoritos.size} pizzas favoritas",
-                        onClick = { }
-                    )
-
-                    Divider()
-
-                    PerfilMenuItem(
-                        icon = Icons.Default.Notifications,
-                        title = "Notificaciones",
-                        subtitle = "Configurar preferencias",
-                        onClick = { }
-                    )
-
-                    Divider()
-
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     PerfilMenuItem(
                         icon = Icons.Default.Info,
                         title = "Acerca de",
@@ -345,91 +264,76 @@ fun PerfilScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            var showDeleteDialog by remember { mutableStateOf(false) }
+
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = { Text("¿Eliminar Cuenta?") },
+                    text = { Text("Se borrarán tus datos personales de la base de datos. Esta acción es permanente.") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.eliminarCuenta()
+                                showDeleteDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Sí, Eliminar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
+
+            OutlinedButton(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.DeleteForever, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Eliminar mi Cuenta")
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-fun StatCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    value: String,
-    label: String
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.secondary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+fun StatCard(modifier: Modifier = Modifier, icon: ImageVector, value: String, label: String) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.secondary)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-fun PerfilMenuItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-
+fun PerfilMenuItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.width(16.dp))
-
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        Icon(
-            Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

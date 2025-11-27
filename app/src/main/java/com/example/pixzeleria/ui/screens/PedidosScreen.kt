@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -33,7 +34,7 @@ fun PedidosScreen(
                 title = { Text("Mis Pedidos") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -57,7 +58,10 @@ fun PedidosScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(orders) { order ->
-                    PedidoCard(pedido = order)
+                    PedidoCard(
+                        pedido = order,
+                        onCancel = { viewModel.cancelarPedido(order.id) }
+                    )
                 }
             }
         }
@@ -65,10 +69,42 @@ fun PedidosScreen(
 }
 
 @Composable
-fun PedidoCard(pedido: Pedido) {
+fun PedidoCard(
+    pedido: Pedido,
+    onCancel: () -> Unit
+) {
     val numberFormat = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     var expanded by remember { mutableStateOf(false) }
+
+    // Diálogo de confirmación pa borrar
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Cancelar Pedido") },
+            text = { Text("¿Estás seguro de que quieres cancelar este pedido? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onCancel()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Sí, Cancelar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -96,12 +132,23 @@ fun PedidoCard(pedido: Pedido) {
                     )
                 }
 
-                PedidoStatus(status = pedido.estado)
+                // Fila para estado y botón de borrar
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PedidoStatus(status = pedido.estado)
+
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Cancelar Pedido",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -126,9 +173,8 @@ fun PedidoCard(pedido: Pedido) {
                             )
                         }
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-                    Divider()
+                    HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }

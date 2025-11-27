@@ -1,19 +1,24 @@
 package com.example.pixzeleria.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pixzeleria.data.model.*
 import com.example.pixzeleria.data.local.DataStoreManager
+import com.example.pixzeleria.network.RetrofitClient
+import com.example.pixzeleria.network.toUiModel // Asegúrate de tener esta función del paso anterior
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dataStoreManager = DataStoreManager(application)
 
-    // State flows
+    // State flowsss
     private val _pizzas = MutableStateFlow<List<Pizza>>(emptyList())
     val pizzas: StateFlow<List<Pizza>> = _pizzas.asStateFlow()
 
@@ -37,102 +42,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         items.sumOf { it.cantidad }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
+    // API Pokemon
+    private val _pokemonNombre = MutableStateFlow<String>("")
+    val pokemonNombre: StateFlow<String> = _pokemonNombre.asStateFlow()
+
+    private val _pokemonImagen = MutableStateFlow<String>("")
+    val pokemonImagen: StateFlow<String> = _pokemonImagen.asStateFlow()
+
     init {
         loadInitialData()
         observeDataStore()
+        cargarMascotaDelDia()
+        cargarHistorialReal()
     }
 
     private fun loadInitialData() {
-        // Ya llegaron las pipshas
-        _pizzas.value = listOf(
-            Pizza(
-                id = "1",
-                nombrePizza = "Margherita Clásica",
-                descripcion = "Tomate, mozzarella fresca, albahaca y aceite de oliva",
-                precio = 12990.0,
-                imagenUrl = "margherita",
-                categoria = "Clásicas",
-                ingredientes = listOf("Tomate", "Mozzarella", "Albahaca", "Aceite de oliva")
-            ),
-            Pizza(
-                id = "2",
-                nombrePizza = "Pepperoni Suprema",
-                descripcion = "Doble pepperoni, mozzarella y salsa especial",
-                precio = 14990.0,
-                imagenUrl = "pepperoni",
-                categoria = "Clásicas",
-                ingredientes = listOf("Pepperoni", "Mozzarella", "Salsa de tomate")
-            ),
-            Pizza(
-                id = "3",
-                nombrePizza = "Cuatro Quesos",
-                descripcion = "Mozzarella, parmesano, gorgonzola y provolone",
-                precio = 15990.0,
-                imagenUrl = "quattro_formaggi",
-                categoria = "Gourmet",
-                ingredientes = listOf("Mozzarella", "Parmesano", "Gorgonzola", "Provolone")
-            ),
-            Pizza(
-                id = "4",
-                nombrePizza = "Vegetariana Deluxe",
-                descripcion = "Champiñones, pimientos, aceitunas, cebolla y tomate",
-                precio = 13990.0,
-                imagenUrl = "vegetariana",
-                categoria = "Veggies",
-                ingredientes = listOf("Champiñones", "Pimientos", "Aceitunas", "Cebolla", "Tomate")
-            ),
-            Pizza(
-                id = "5",
-                nombrePizza = "BBQ Chicken",
-                descripcion = "Pollo marinado, cebolla morada, bacon y salsa BBQ",
-                precio = 16990.0,
-                imagenUrl = "bbq_chicken",
-                categoria = "Especiales",
-                ingredientes = listOf("Pollo", "Cebolla morada", "Bacon", "Salsa BBQ")
-            ),
-            Pizza(
-                id = "6",
-                nombrePizza = "Hawaiana",
-                descripcion = "Jamón, piña, mozzarella y salsa de tomate",
-                precio = 13990.0,
-                imagenUrl = "hawaiana",
-                categoria = "Clásicas",
-                ingredientes = listOf("Jamón", "Piña", "Mozzarella")
-            ),
-            Pizza(
-                id = "7",
-                nombrePizza = "Italiana",
-                descripcion = "Prosciutto, rúcula, tomates cherry y parmesano",
-                precio = 17990.0,
-                imagenUrl = "italiana",
-                categoria = "Gourmet",
-                ingredientes = listOf("Prosciutto", "Rúcula", "Tomates cherry", "Parmesano")
-            ),
-            Pizza(
-                id = "8",
-                nombrePizza = "Mexicana Picante",
-                descripcion = "Carne molida, jalapeños, nachos, queso cheddar",
-                precio = 15990.0,
-                imagenUrl = "mexicana",
-                categoria = "Especiales",
-                ingredientes = listOf("Carne molida", "Jalapeños", "Nachos", "Queso cheddar")
-            )
-        )
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val pizzasBackend = RetrofitClient.instance.obtenerPizzas()
+
+                    val pizzasUi = pizzasBackend.map { it.toUiModel() }
+
+                    _pizzas.value = pizzasUi
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error al conectar con el servidor: ${e.message}")
+                _pizzas.value = emptyList()
+            }
+        }
     }
 
     private fun observeDataStore() {
-        viewModelScope.launch {
-            dataStoreManager.carritoFlow.collect { _carro.value = it }
-        }
-        viewModelScope.launch {
-            dataStoreManager.usuarioFlow.collect { _usuario.value = it }
-        }
-        viewModelScope.launch {
-            dataStoreManager.pedidoHistorialFlow.collect { _pedidos.value = it }
-        }
-        viewModelScope.launch {
-            dataStoreManager.favoritasFlow.collect { _favoritas.value = it }
-        }
+        viewModelScope.launch { dataStoreManager.carritoFlow.collect { _carro.value = it } }
+        viewModelScope.launch { dataStoreManager.usuarioFlow.collect { _usuario.value = it } }
+        viewModelScope.launch { dataStoreManager.favoritasFlow.collect { _favoritas.value = it } }
     }
 
     // Carrito operaciones
@@ -146,7 +90,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 currentCart.add(Carrito(pizza, quantity))
             }
-
             dataStoreManager.guardarCarrito(currentCart)
         }
     }
@@ -180,14 +123,43 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Guarda el usuario al rellenar la información. Además que debe rellenarla sí o sí
     fun guardarUsuario(user: User) {
         viewModelScope.launch {
             dataStoreManager.guardarUsuario(user)
         }
     }
 
-    // Operaciones de los pedidosss
+    fun actualizarPerfil(nuevoUsuario: User) {
+        viewModelScope.launch {
+            try {
+                val response = com.example.pixzeleria.network.RetrofitClient.instance.guardarPerfil(nuevoUsuario)
+
+                if (response.isSuccessful) {
+                    android.util.Log.d("API", "Perfil guardado/actualizado con éxito")
+                } else {
+                    android.util.Log.e("API", "Error guardando: ${response.code()}")
+                }
+                guardarUsuario(nuevoUsuario)
+            } catch (e: Exception) {
+                android.util.Log.e("API", "Error conexión: ${e.message}")
+                guardarUsuario(nuevoUsuario)
+            }
+        }
+    }
+
+    fun eliminarCuenta() {
+        viewModelScope.launch {
+            try {
+                val response = com.example.pixzeleria.network.RetrofitClient.instance.eliminarCliente()
+            } catch (e: Exception) {
+            } finally {
+                val usuarioVacio = User(nombre = "", email = "", telefono = "", direccion = "")
+                guardarUsuario(usuarioVacio)
+                _pedidos.value = emptyList()
+            }
+        }
+    }
+
     fun crearOrden(
         nombreUsuario: String,
         telefonoUsuario: String,
@@ -196,19 +168,127 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         instruccionEspecial: String
     ) {
         viewModelScope.launch {
-            val pedido = Pedido(
-                id = UUID.randomUUID().toString(),
-                items = _carro.value,
-                nombreCliente = nombreUsuario,
-                numeroCliente = telefonoUsuario,
-                emailCliente = emailUsuario,
-                direccionDeli = direccionUsuario,
-                instruccionEspecial = instruccionEspecial,
-                total = carroTotal.value
-            )
+            try {
+                val itemsRequest = _carro.value.map { carritoItem ->
+                    com.example.pixzeleria.network.DetallePedidoRequest(
+                        nombrePizza = carritoItem.pizza.nombrePizza,
+                        pizzaId = carritoItem.pizza.id.toLongOrNull() ?: 0L,
+                        precio = carritoItem.pizza.precio,
+                        cantidad = carritoItem.cantidad
+                    )
+                }
 
-            dataStoreManager.guardarPedido(pedido)
-            limpiarCarro()
+                val requestBackend = com.example.pixzeleria.network.PedidoRequest(
+                    clienteId = 1,
+                    items = itemsRequest
+                )
+
+                withContext(Dispatchers.IO) {
+                    val response = com.example.pixzeleria.network.RetrofitClient.instance.crearPedido(requestBackend)
+
+                    if (response.isSuccessful) {
+                        android.util.Log.d("API", "Pedido creado con éxito en servidor: ${response.body()?.id}")
+
+                        cargarHistorialReal()
+                    } else {
+                        android.util.Log.e("API", "Error en servidor: ${response.code()}")
+                    }
+                }
+
+                val pedidoLocal = Pedido(
+                    id = UUID.randomUUID().toString(),
+                    items = _carro.value,
+                    nombreCliente = nombreUsuario,
+                    numeroCliente = telefonoUsuario,
+                    emailCliente = emailUsuario,
+                    direccionDeli = direccionUsuario,
+                    instruccionEspecial = instruccionEspecial,
+                    total = carroTotal.value
+                )
+
+                dataStoreManager.guardarPedido(pedidoLocal)
+
+                limpiarCarro()
+
+            } catch (e: Exception) {
+                android.util.Log.e("API", "Error de conexión: ${e.message}")
+                // Lógica offline de respaldo
+                val pedidoLocalOffline = Pedido(
+                    id = UUID.randomUUID().toString(),
+                    items = _carro.value,
+                    nombreCliente = nombreUsuario,
+                    numeroCliente = telefonoUsuario,
+                    emailCliente = emailUsuario,
+                    direccionDeli = direccionUsuario,
+                    instruccionEspecial = instruccionEspecial,
+                    total = carroTotal.value
+                )
+                dataStoreManager.guardarPedido(pedidoLocalOffline)
+                limpiarCarro()
+            }
+        }
+    }
+
+    fun cancelarPedido(pedidoId: String) {
+        viewModelScope.launch {
+            try {
+                val idLong = pedidoId.toLongOrNull()
+                if (idLong != null) {
+                    val response = RetrofitClient.instance.eliminarPedido(idLong)
+
+                    if (response.isSuccessful) {
+                        val listaActualizada = _pedidos.value.toMutableList()
+                        listaActualizada.removeAll { it.id == pedidoId }
+                        _pedidos.value = listaActualizada
+                        Log.d("API", "Pedido eliminado con éxito")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("API", "Error al eliminar: ${e.message}")
+            }
+        }
+    }
+
+    fun cargarHistorialReal() {
+        viewModelScope.launch {
+            try {
+                val pedidosReales = com.example.pixzeleria.network.RetrofitClient.instance.obtenerPedidosPorCliente(1)
+
+                val pedidosUi = pedidosReales.map { p ->
+                    com.example.pixzeleria.data.model.Pedido(
+                        id = p.id.toString(),
+                        total = p.total,
+                        estado = when (p.estado) {
+                            "PENDIENTE" -> com.example.pixzeleria.data.model.pedidoStatus.PENDIENTE
+                            else -> com.example.pixzeleria.data.model.pedidoStatus.COMPLETO
+                        },
+                        fecha = System.currentTimeMillis(),
+                        nombreCliente = "Cliente",
+                        numeroCliente = "",
+                        emailCliente = "",
+                        direccionDeli = "Dirección Registrada",
+                        items = p.items.map { item ->
+                            // Carrito falso solo pa visualizar
+                            com.example.pixzeleria.data.model.Carrito(
+                                pizza = com.example.pixzeleria.data.model.Pizza(
+                                    id = "0",
+                                    nombrePizza = item.nombrePizza,
+                                    descripcion = "",
+                                    precio = item.precio,
+                                    imagenUrl = "",
+                                    categoria = ""
+                                ),
+                                cantidad = item.cantidad
+                            )
+                        }
+                    )
+                }
+
+                _pedidos.value = pedidosUi
+
+            } catch (e: Exception) {
+                android.util.Log.e("API", "Error cargando historial: ${e.message}")
+            }
         }
     }
 
@@ -221,5 +301,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun esFavorita(pizzaId: String): Boolean {
         return _favoritas.value.contains(pizzaId)
+    }
+
+    // Función para traer un Puchamon Random (de la gen 1 obvio)
+    fun cargarMascotaDelDia() {
+        viewModelScope.launch {
+            try {
+                Log.d("POKEAPI", "Iniciando búsqueda de Pokémon...") // Chivato 1
+
+                val randomId = (1..151).random()
+                val response = com.example.pixzeleria.network.PokeRetrofitClient.instance.obtenerPokemon(randomId)
+
+                if (response.isSuccessful) {
+                    val pokemon = response.body()
+                    Log.d("POKEAPI", "¡ÉXITO! Pokémon encontrado: ${pokemon?.name}") // Chivato 2
+
+                    _pokemonNombre.value = pokemon?.name?.replaceFirstChar { it.uppercase() } ?: "Desconocido"
+                    _pokemonImagen.value = pokemon?.sprites?.frontDefault ?: ""
+                } else {
+                    Log.e("POKEAPI", "Error del servidor: ${response.code()}") // Chivato 3
+                }
+            } catch (e: Exception) {
+                Log.e("POKEAPI", "FALLÓ LA CONEXIÓN: ${e.message}") // Chivato 4
+                e.printStackTrace()
+            }
+        }
     }
 }
