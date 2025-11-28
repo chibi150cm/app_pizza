@@ -23,4 +23,10 @@ interface ApiService {
 
     @DELETE("clientes/0")
     suspend fun eliminarCliente(): Response<Void>
+
+    @POST("clientes/login")
+    suspend fun login(@Body credenciales: Map<String, String>): Response<User>
+
+    @POST("clientes/registro")
+    suspend fun registrar(@Body usuario: User): Response<User>
 }

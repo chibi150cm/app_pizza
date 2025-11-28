@@ -42,6 +42,83 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         items.sumOf { it.cantidad }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
+    // Cambio a modo Admin
+    private val _esAdmin = MutableStateFlow(false)
+    val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
+
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    private val _loginError = MutableStateFlow<String?>(null)
+    val loginError: StateFlow<String?> = _loginError.asStateFlow()
+
+    fun login(email: String, pass: String) {
+        viewModelScope.launch {
+            try {
+                val credenciales = mapOf("email" to email, "password" to pass)
+                val response = com.example.pixzeleria.network.RetrofitClient.instance.login(credenciales)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val usuarioRecibido = response.body()!!
+                    _usuario.value = usuarioRecibido
+                    _isLoggedIn.value = true
+                    _esAdmin.value = (usuarioRecibido.rol == "ADMIN") // Setea el rol automáticamente
+                    _loginError.value = null
+
+                    // Guardado en DataStore
+                    guardarUsuario(usuarioRecibido)
+                } else {
+                    _loginError.value = "Credenciales incorrectas"
+                }
+            } catch (e: Exception) {
+                _loginError.value = "Error de conexión"
+            }
+        }
+    }
+
+    fun registrarse(usuario: User) {
+        viewModelScope.launch {
+            try {
+                val response = com.example.pixzeleria.network.RetrofitClient.instance.registrar(usuario)
+                if (response.isSuccessful) {
+                    login(usuario.email, usuario.password)
+                } else {
+                    _loginError.value = "El correo ya está registrado"
+                }
+            } catch (e: Exception) {
+                _loginError.value = "Error al registrar"
+            }
+        }
+    }
+
+    fun logout() {
+        _isLoggedIn.value = false
+        _usuario.value = User()
+    }
+
+    // API Clima
+
+    private val _temperatura = MutableStateFlow<Double?>(null)
+    val temperatura: StateFlow<Double?> = _temperatura.asStateFlow()
+
+    fun cargarClima() {
+        viewModelScope.launch {
+            try {
+                // Coordenadas de Santiago
+                val lat = -33.4489
+                val lon = -70.6693
+
+                val response = com.example.pixzeleria.network.ClimaRetrofitClient.instance.obtenerClima(lat, lon)
+
+                if (response.isSuccessful) {
+                    _temperatura.value = response.body()?.currentWeather?.temperature
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("API", "Error clima: ${e.message}")
+            }
+        }
+    }
+
     // API Pokemon
     private val _pokemonNombre = MutableStateFlow<String>("")
     val pokemonNombre: StateFlow<String> = _pokemonNombre.asStateFlow()
@@ -54,6 +131,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         observeDataStore()
         cargarMascotaDelDia()
         cargarHistorialReal()
+        cargarClima()
     }
 
     private fun loadInitialData() {

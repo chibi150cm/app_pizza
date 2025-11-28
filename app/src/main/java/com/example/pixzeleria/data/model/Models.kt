@@ -44,8 +44,11 @@ enum class pedidoStatus {
 }
 
 data class User(
+    val id: Long? = null,
     val nombre: String = "",
     val email: String = "",
+    val password: String = "",
     val telefono: String = "",
-    val direccion: String = ""
+    val direccion: String = "",
+    val rol: String = "USER"
 )

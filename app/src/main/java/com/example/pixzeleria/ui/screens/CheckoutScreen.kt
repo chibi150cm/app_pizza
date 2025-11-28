@@ -1,18 +1,24 @@
 package com.example.pixzeleria.ui.screens
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -35,12 +41,16 @@ fun CheckoutScreen(
     val carroTotal by viewModel.carroTotal.collectAsState()
     val focusManager = LocalFocusManager.current
     val formatoNumero = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
+    val context = LocalContext.current
 
     var nombreUsuario by remember { mutableStateOf(usuario.nombre) }
     var emailUsuario by remember { mutableStateOf(usuario.email) }
     var telefonoUsuario by remember { mutableStateOf(usuario.telefono) }
     var direccionUsuario by remember { mutableStateOf(usuario.direccion) }
     var instruccionEspecial by remember { mutableStateOf("") }
+
+    var tipoDocumento by remember { mutableStateOf("Boleta") } // RadioButton
+    var aceptaTerminos by remember { mutableStateOf(false) }   // Checkbox
 
     var nomusuError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
@@ -49,6 +59,23 @@ fun CheckoutScreen(
 
     var mostrarConfirmacion by remember { mutableStateOf(false) }
     var enProceso by remember { mutableStateOf(false) }
+
+    fun vibrarCelular() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(200)
+        }
+    }
 
     fun formularioValidacion(): Boolean {
         val validaciones = formularioValidacion.validarCheckout(nombreUsuario, emailUsuario, telefonoUsuario, direccionUsuario)
@@ -70,29 +97,32 @@ fun CheckoutScreen(
                 Column {
                     Text("¿Confirmas tu pedido por ${formatoNumero.format(carroTotal + 2500)}?")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Será entregado en: $direccionUsuario",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("Documento: $tipoDocumento", style = MaterialTheme.typography.bodySmall)
+                    Text("Envío a: $direccionUsuario", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         enProceso = true
+
+                        // Vibrars al comprar
+                        vibrarCelular()
+                        android.util.Log.d("VIBRACION", "Si me ven es porque vibro alto")
+
                         viewModel.crearOrden(
                             nombreUsuario = nombreUsuario,
                             telefonoUsuario = telefonoUsuario,
                             emailUsuario = emailUsuario,
                             direccionUsuario = direccionUsuario,
-                            instruccionEspecial = instruccionEspecial
+                            instruccionEspecial = "$instruccionEspecial (Doc: $tipoDocumento)"
                         )
                         mostrarConfirmacion = false
                         enProceso = false
                         onOrderPlaced()
                     }
                 ) {
-                    Text("Confirmar")
+                    Text("Confirmar y Pagar")
                 }
             },
             dismissButton = {
@@ -109,7 +139,7 @@ fun CheckoutScreen(
                 title = { Text("Finalizar Pedido") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -124,7 +154,7 @@ fun CheckoutScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Información del cliente
+            // Info del cliente
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,119 +170,67 @@ fun CheckoutScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Campo Nombre
                     OutlinedTextField(
                         value = nombreUsuario,
-                        onValueChange = {
-                            nombreUsuario = it
-                            nomusuError = null
-                        },
+                        onValueChange = { nombreUsuario = it; nomusuError = null },
                         label = { Text("Nombre completo *") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         isError = nomusuError != null,
                         supportingText = nomusuError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Campo Email
                     OutlinedTextField(
                         value = emailUsuario,
-                        onValueChange = {
-                            emailUsuario = it
-                            emailError = null
-                        },
+                        onValueChange = { emailUsuario = it; emailError = null },
                         label = { Text("Correo electrónico *") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         isError = emailError != null,
                         supportingText = emailError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Campo Teléfono
                     OutlinedTextField(
                         value = telefonoUsuario,
-                        onValueChange = {
-                            telefonoUsuario = it
-                            telefonoError = null
-                        },
+                        onValueChange = { telefonoUsuario = it; telefonoError = null },
                         label = { Text("Teléfono *") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Phone, contentDescription = null)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                         isError = telefonoError != null,
                         supportingText = telefonoError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Campo Dirección
                     OutlinedTextField(
                         value = direccionUsuario,
-                        onValueChange = {
-                            direccionUsuario = it
-                            direccionError = null
-                        },
+                        onValueChange = { direccionUsuario = it; direccionError = null },
                         label = { Text("Dirección de entrega *") },
-                        leadingIcon = {
-                            Icon(Icons.Default.LocationOn, contentDescription = null)
-                        },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
                         isError = direccionError != null,
                         supportingText = direccionError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         minLines = 2,
                         maxLines = 3,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Instrucciones especiales
                     OutlinedTextField(
                         value = instruccionEspecial,
                         onValueChange = { instruccionEspecial = it },
-                        label = { Text("Instrucciones especiales (opcional)") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Description, contentDescription = null)
-                        },
-                        placeholder = { Text("Ej: Sin cebolla, timbre roto, etc.") },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
-                        ),
+                        label = { Text("Instrucciones especiales") },
+                        leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
+                        placeholder = { Text("Ej: Sin cebolla, timbre roto") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                         minLines = 3,
                         maxLines = 5,
                         modifier = Modifier.fillMaxWidth()
@@ -260,7 +238,38 @@ fun CheckoutScreen(
                 }
             }
 
-            // Resumen del pedido
+            // Boleta o factura????
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Tipo de Documento", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = tipoDocumento == "Boleta",
+                            onClick = { tipoDocumento = "Boleta" }
+                        )
+                        Text("Boleta", modifier = Modifier.padding(start = 8.dp))
+
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        RadioButton(
+                            selected = tipoDocumento == "Factura",
+                            onClick = { tipoDocumento = "Factura" }
+                        )
+                        Text("Factura", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Resumen
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -332,7 +341,23 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón de finalizar pedido
+            // Checkbox de términos
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = aceptaTerminos,
+                    onCheckedChange = { aceptaTerminos = it }
+                )
+                Text(
+                    text = "Acepto los términos y condiciones de la Pixzeleria",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
             Button(
                 onClick = {
                     if (formularioValidacion()) {
@@ -343,7 +368,8 @@ fun CheckoutScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(56.dp),
-                enabled = !enProceso
+                // Solo habilitado si no está cargando y si se aceptó los términos
+                enabled = !enProceso && aceptaTerminos
             ) {
                 if (enProceso) {
                     CircularProgressIndicator(

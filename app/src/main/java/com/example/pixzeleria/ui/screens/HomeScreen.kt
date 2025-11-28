@@ -43,6 +43,8 @@ fun HomeScreen(
     val pokeNombre by viewModel.pokemonNombre.collectAsState()
     val pokeImagen by viewModel.pokemonImagen.collectAsState()
 
+    val temperatura by viewModel.temperatura.collectAsState()
+
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
@@ -125,7 +127,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PromoSeccion()
+            PromoSeccion(temperatura = temperatura)
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -318,13 +320,13 @@ fun PizzaDestacadaCard(
 }
 
 @Composable
-fun PromoSeccion() {
+fun PromoSeccion(temperatura: Double?) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer // Cambié color para que destaque
         )
     ) {
         Row(
@@ -334,21 +336,30 @@ fun PromoSeccion() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Default.LocalOffer,
-                contentDescription = null,
+                imageVector = if (temperatura != null) Icons.Default.Thermostat else Icons.Default.CloudSync,
+                contentDescription = "Clima",
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.tertiary
             )
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Column {
                 Text(
-                    "¡Oferta Especial!",
+                    text = "Clima en Santiago",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+
+                val mensaje = if (temperatura != null) {
+                    "$temperatura°C — ¡Perfecto para una pizza!"
+                } else {
+                    "Consultando el tiempo..."
+                }
+
                 Text(
-                    "2x1 en pizzas familiares todos los viernes",
-                    style = MaterialTheme.typography.bodySmall
+                    text = mensaje,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
