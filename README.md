@@ -20,7 +20,7 @@ La aplicación cubre el ciclo completo de compra y gestión de usuario:
 4.  **Gestión de perfil (CRUD):**
     * **Update:** Edición de datos personales (dirección, teléfono).
     * **Delete:** Eliminación de cuenta de usuario.
-5.  **Integración API Externa:** Consumo de **PokeAPI** para mostrar una "Mascota del Día" aleatoria en el Home, más una API de clima en Santiago.
+5.  **Integración API Externa:** Consumo de **PokeAPI** para mostrar una "Mascota del día" aleatoria en el Home, más una API de clima en Santiago.
 6.  **Persistencia Híbrida:** Uso de **DataStore** para caché local y **MySQL** para persistencia remota.
 7.  **Recursos nativos:** Al confirmar un pedido, el celular emitirá una vibración, tal y como lo hacen los joystick en los videojuegos.
 
@@ -45,8 +45,8 @@ Base URL: `http://10.0.2.2:8081/api/`
 ### 2. API Externa
 | Servicio | Endpoint | Descripción |
 | :--- | :--- | :--- |
-| **PokeAPI** | `https://pokeapi.co/api/v2/pokemon/{id}` | Obtiene nombre y sprite de un Pokémon aleatorio (Gen 1) |
-| **OpenMeteo** | `https://api.open-meteo.com/v1/"` | Obtiene el clima a tiempo real |
+| **PokeAPI** | `https://pokeapi.co/api/v2/pokemon/{id}` | Obtiene nombre e imagen de un Pokémon aleatorio (Gen 1) |
+| **OpenMeteo** | `https://api.open-meteo.com/v1/` | Obtiene el clima a tiempo real |
 
 ---
 
@@ -56,8 +56,10 @@ Para probar el entorno completo (Cliente-Servidor), sigue este orden:
 
 ### 1. Base de Datos
 * Abrir **XAMPP**.
+* Iniciar Tomcat.
+* Iniciar Apache.
 * Iniciar el servicio **MySQL** (Puerto 3306).
-* Crear la base de datos llamada: `pixzeria_pizzas`.
+* Crear la base de datos llamada: `pixzeria_pizzas` (Esto es MUCHO MUY IMPORTANTE!)
 
 ### 2. Backend (Spring Boot)
 * Abrir el proyecto del backend.
@@ -68,12 +70,12 @@ Para probar el entorno completo (Cliente-Servidor), sigue este orden:
 ### 3. Frontend (Android)
 * Abrir el proyecto de la app en **Android Studio**.
 * Asegurarse de tener un **Emulador** configurado (API 26 o superior) con acceso a internet.
-* Ejecutar la app (Run 'app').
+* Ejecutar la app.
 * *Nota:* La app está configurada para apuntar a `10.0.2.2`, que es la dirección localhost del emulador.
 
 ---
 
-## 📦 Evidencia de Entrega (APK)
+## Evidencia de Entrega (APK)
 
 En la carpeta Releases se encuentran los archivos generados:
 
