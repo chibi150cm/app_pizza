@@ -21,8 +21,8 @@ interface ApiService {
     @POST("clientes/guardar")
     suspend fun guardarPerfil(@Body cliente: User): Response<User>
 
-    @DELETE("clientes/0")
-    suspend fun eliminarCliente(): Response<Void>
+    @DELETE("clientes/{id}")
+    suspend fun eliminarCliente(@Path("id") id: Long): Response<Void>
 
     @POST("clientes/login")
     suspend fun login(@Body credenciales: Map<String, String>): Response<User>

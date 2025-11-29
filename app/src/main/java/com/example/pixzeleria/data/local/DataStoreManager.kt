@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey // IMPORTANTE: Para el ID
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
@@ -20,6 +21,10 @@ class DataStoreManager(private val context: Context) {
     private val gson = Gson()
 
     companion object {
+        private val USUARIO_ID = longPreferencesKey("usuario_id")
+        private val USUARIO_PASSWORD = stringPreferencesKey("usuario_password")
+        private val USUARIO_ROL = stringPreferencesKey("usuario_rol")
+
         private val USUARIO_NOMBRE = stringPreferencesKey("usuario_nombre")
         private val USUARIO_EMAIL = stringPreferencesKey("usuario_email")
         private val USUARIO_TELEFONO = stringPreferencesKey("usuario_telefono")
@@ -29,22 +34,32 @@ class DataStoreManager(private val context: Context) {
         private val PIZZAS_FAVORITAS = stringPreferencesKey("pizzas_favoritas")
     }
 
-    // Info del usuariosss
+    // Info del cliente
     suspend fun guardarUsuario(user: User) {
         context.dataStore.edit { preferences ->
+            preferences[USUARIO_ID] = user.id ?: -1L
+
             preferences[USUARIO_NOMBRE] = user.nombre
             preferences[USUARIO_EMAIL] = user.email
+            preferences[USUARIO_PASSWORD] = user.password
             preferences[USUARIO_TELEFONO] = user.telefono
             preferences[USUARIO_DIRECCION] = user.direccion
+            preferences[USUARIO_ROL] = user.rol
         }
     }
 
     val usuarioFlow: Flow<User> = context.dataStore.data.map { preferences ->
+        val idGuardado = preferences[USUARIO_ID] ?: -1L
+        val idReal = if (idGuardado == -1L) null else idGuardado
+
         User(
+            id = idReal,
             nombre = preferences[USUARIO_NOMBRE] ?: "",
             email = preferences[USUARIO_EMAIL] ?: "",
+            password = preferences[USUARIO_PASSWORD] ?: "",
             telefono = preferences[USUARIO_TELEFONO] ?: "",
-            direccion = preferences[USUARIO_DIRECCION] ?: ""
+            direccion = preferences[USUARIO_DIRECCION] ?: "",
+            rol = preferences[USUARIO_ROL] ?: "USER"
         )
     }
 
@@ -61,7 +76,7 @@ class DataStoreManager(private val context: Context) {
         gson.fromJson(json, type) ?: emptyList()
     }
 
-    // Historial de las órdenes
+    // Historial de pedidos (Sí profe, hay backend, pero sirve de backup ;_;)
     suspend fun guardarPedido(pedido: Pedido) {
         context.dataStore.edit { preferences ->
             val historialActual = preferences[HISTORIAL_PEDIDOS] ?: "[]"
