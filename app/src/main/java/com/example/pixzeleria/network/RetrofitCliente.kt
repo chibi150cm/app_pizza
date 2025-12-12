@@ -4,7 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "https://pixzeleria-backend.onrender.com/api/"
+    private const val BASE_URL = "https://apppizzabackend-production.up.railway.app/api/"
 
     val instance: ApiService by lazy {
         val retrofit = Retrofit.Builder()
