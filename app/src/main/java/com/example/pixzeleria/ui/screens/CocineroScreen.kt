@@ -188,16 +188,22 @@ fun CocineroOrderCard(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000))
                         ) { Text("A COCINAR") }
                     }
-                    pedidoStatus.PREPARANDO, pedidoStatus.ENVIADO -> {
+                    pedidoStatus.PREPARANDO -> {
                         Button(
-                            onClick = { onCambiarEstado(pedidoStatus.COMPLETO) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
-                        ) { Text("FINALIZAR") }
+                            onClick = { onCambiarEstado(pedidoStatus.ENVIADO) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                        ) { Text("TERMINAR Y DESPACHAR") }
+                    }
+                    pedidoStatus.ENVIADO -> {
+                        Text("En camino...", color = Color(0xFF1976D2), fontWeight = FontWeight.Bold)
                     }
                     pedidoStatus.COMPLETO -> {
-                        Text("¡Listo!", color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)
+                        Text("¡Entregado!", color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)
                     }
-                    else -> {}
+
+                    pedidoStatus.CONFIRMADO -> TODO()
+                    pedidoStatus.TERMINADO -> TODO()
+                    pedidoStatus.CANCELADO -> TODO()
                 }
             }
         }

@@ -68,7 +68,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val esRepartidor: StateFlow<Boolean> = _esRepartidor.asStateFlow()
 
     val pedidosReparto: StateFlow<List<Pedido>> = _pedidosCocina.map { lista ->
-        lista.filter { it.estado == pedidoStatus.ENVIADO }
+        lista.filter {
+            it.estado == pedidoStatus.ENVIADO || it.estado == pedidoStatus.PREPARANDO || it.estado == pedidoStatus.TERMINADO
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 

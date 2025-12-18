@@ -51,5 +51,6 @@ data class User(
     val telefono: String = "",
     val direccion: String = "",
     val rol: String = "USER",
-    val token: String? = null
+    val token: String? = null,
+    val fotoUrl: String = ""
 )

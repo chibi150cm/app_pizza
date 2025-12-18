@@ -195,6 +195,9 @@ fun PerfilLogueadoView(
     ) { uri: Uri? ->
         if (uri != null) {
             imagenUri = uri
+            val usuarioConFoto = viewModel.usuario.value.copy(fotoUrl = uri.toString())
+            viewModel.guardarUsuario(usuarioConFoto)
+            viewModel.actualizarPerfil(usuarioConFoto)
         }
     }
 
@@ -273,9 +276,11 @@ fun PerfilLogueadoView(
                 ) {
                     if (imagenUri != null) {
                         AsyncImage(
-                            model = imagenUri,
-                            contentDescription = "Foto Perfil",
-                            modifier = Modifier.fillMaxSize(),
+                            model = imagenUri ?: viewModel.usuario.collectAsState().value.fotoUrl,
+                            contentDescription = "Foto de Perfil",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape),
                             contentScale = ContentScale.Crop
                         )
                     } else {
