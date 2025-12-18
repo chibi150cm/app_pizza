@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -351,7 +352,7 @@ fun CheckoutScreen(
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                         Text(
-                            text = "¡Activa el Switch para un descuento especial! ;3",
+                            text = "¡Activa el Switch y ve qué pasa! ;3",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
@@ -362,6 +363,9 @@ fun CheckoutScreen(
                             soyGamer = it
                             viewModel.alternarDescuento(it)
                         },
+                        modifier = Modifier
+                            .scale(0.8f)
+                            .padding(0.dp),
                         thumbContent = if (soyGamer) {
                             {
                                 Icon(

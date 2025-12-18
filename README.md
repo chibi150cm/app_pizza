@@ -57,7 +57,7 @@ Base URL: `https://apppizzabackend-production.up.railway.app/api/`
 * Ejecutar la clase principal `PixzeleriaApplication.kt` y esperar confirmación en el puerto 8081.
 * Como el backend está en Railway, de momento se puede saltar al paso del Frontend.
 
-### 3. Frontend (Android)
+### 2. Frontend (Android)
 * Abrir el proyecto en **Android Studio**.
 * Ejecutar en emulador (API 26 o superior).
 * **Pruebas:** Para validar la lógica, ejecutar el archivo `MainViewModelTest`.
@@ -68,7 +68,7 @@ Base URL: `https://apppizzabackend-production.up.railway.app/api/`
 
 El proyecto incluye la configuración técnica necesaria para su distribución:
 * **APK Firmado:** Ubicado en la carpeta `app/release/app-release.apk`.
-* **Llave de Firma:** Archivo `.jks` ubicado en la configuración técnica del repositorio.
+* **Llave de Firma:** Archivo `llave_definitiva.jks` ubicado en la configuración técnica del repositorio.
 
 ---
 Desarrollado para la asignatura **DSY1105 - Desarrollo de Aplicaciones Móviles**.
