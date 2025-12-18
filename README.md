@@ -35,12 +35,16 @@ Base URL: `https://apppizzabackend-production.up.railway.app/api/`
 
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
-| **GET** | `/pizzas` | Obtiene el menú completo de pizzas |
+| **GET** | `/pizzas` | Obtiene el menú completo de pizzas desde la BD remota |
 | **POST** | `/pedidos` | Crea una nueva orden de compra |
-| **GET** | `/pedidos/cocina` | Historial de comandas para Staff |
-| **PUT** | `/pedidos/{id}/estado` | Actualiza el estado del pedido |
-| **POST** | `/auth/login` | Autenticación y recuperación de datos |
-| **POST** | `/clientes/guardar` | Registro y actualización de perfil |
+| **GET** | `/pedidos/cliente/{id}` | Obtiene el historial específico de un cliente |
+| **GET** | `/pedidos` | Historial global de comandas para Staff (Sanji/Usopp) |
+| **PUT** | `/pedidos/{id}/estado` | Actualiza el flujo del pedido (PREPARANDO -> ENVIADO -> COMPLETO) |
+| **DELETE** | `/pedidos/{id}` | Elimina o cancela un pedido del sistema |
+| **POST** | `/clientes/login` | Autenticación de usuarios y staff |
+| **POST** | `/clientes/registro` | Registro de nuevos clientes |
+| **POST** | `/clientes/guardar` | Actualiza los datos del perfil (incluyendo la foto) |
+| **DELETE** | `/clientes/{id}` | Elimina permanentemente la cuenta de un usuario |
 
 ### 2. API Externa
 | Servicio | Endpoint | Descripción                        |
