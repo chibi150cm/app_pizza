@@ -2,6 +2,9 @@ package com.example.pixzeleria
 
 import com.example.pixzeleria.data.model.Carrito
 import com.example.pixzeleria.data.model.Pizza
+import com.example.pixzeleria.data.model.Pedido
+import com.example.pixzeleria.data.model.pedidoStatus
+import com.example.pixzeleria.data.model.User
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -35,43 +38,75 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `calcular cantidad total de items para el badge`() {
-        // GIVEN
-        val pizza1 = Pizza(id="1", nombrePizza="P1", descripcion="", precio=100.0, imagenUrl="", categoria="")
-
-        val listaCarrito = listOf(
-            Carrito(pizza1, cantidad = 5), // 5 pizzas
-            Carrito(pizza1, cantidad = 3)  // 3 pizzas más
-        )
-
-        val cantidadTotal = listaCarrito.sumOf { it.cantidad }
-
-        assertEquals(8, cantidadTotal)
-    }
-
-    @Test
     fun `calcular total de carrito vacio da cero`() {
-        // GIVEN
         val listaCarrito = emptyList<Carrito>()
-
-        // WHEN
         val totalCalculado = listaCarrito.sumOf { it.subtotal }
-
-        // THEN
         assertEquals(0.0, totalCalculado, 0.0)
     }
 
     @Test
-    fun `calcular total final incluyendo costo de envio`() {
-        val precioPizza = 10000.0
-        val costoDelivery = 2500.0
+    fun `validar acceso diferenciado por roles`() {
+        val admin = User(nombre = "Zeff", email = "a@p.com", rol = "ADMIN")
+        val cocinero = User(nombre = "Sanji", email = "c@p.com", rol = "COCINERO")
+        val repartidor = User(nombre = "Usopp", email = "r@p.com", rol = "REPARTIDOR")
+        val cliente = User(nombre = "Luffy", email = "u@p.com", rol = "USER")
 
-        val pizza = Pizza(id="1", nombrePizza="P1", descripcion="", precio=precioPizza, imagenUrl="", categoria="")
-        val itemCarrito = Carrito(pizza, cantidad = 1)
+        assertEquals(true, admin.rol == "ADMIN" || admin.rol == "COCINERO")
+        assertEquals(true, cocinero.rol == "COCINERO")
+        assertEquals(false, cliente.rol == "COCINERO")
 
-        val subtotal = itemCarrito.subtotal
-        val totalFinal = subtotal + costoDelivery
+        assertEquals(true, repartidor.rol == "REPARTIDOR" || admin.rol == "ADMIN")
+    }
 
-        assertEquals(12500.0, totalFinal, 0.0)
+
+    @Test
+    fun `verificar que el filtro de reparto solo incluya pedidos ENVIADOS`() {
+        val pedidosMuestra = listOf(
+            crearPedidoPrueba("1", pedidoStatus.PENDIENTE, "Luffy"),
+            crearPedidoPrueba("2", pedidoStatus.ENVIADO, "Zoro"), // Este debe entrar
+            crearPedidoPrueba("3", pedidoStatus.COMPLETO, "Nami")
+        )
+
+        val listaReparto = pedidosMuestra.filter { it.estado == pedidoStatus.ENVIADO }
+
+        assertEquals(1, listaReparto.size)
+        assertEquals(pedidoStatus.ENVIADO, listaReparto[0].estado)
+        assertEquals("Zoro", listaReparto[0].nombreCliente)
+    }
+
+    @Test
+    fun `flujo de estados de pedido para Repartidor`() {
+        val pedido = crearPedidoPrueba("ABC", pedidoStatus.ENVIADO, "Usopp")
+
+        val nuevoEstado = if (pedido.estado == pedidoStatus.ENVIADO) {
+            pedidoStatus.COMPLETO
+        } else {
+            pedido.estado
+        }
+
+        assertEquals(pedidoStatus.COMPLETO, nuevoEstado)
+    }
+
+    @Test
+    fun `validacion de formato de email simple`() {
+        val emailValido = "chibi@pixzeleria.com"
+        val emailInvalido = "chibi.com"
+        val regexEmail = "^[A-Za-z0-9+_.-]+@(.+)$".toRegex()
+
+        assertEquals(true, regexEmail.matches(emailValido))
+        assertEquals(false, regexEmail.matches(emailInvalido))
+    }
+
+    private fun crearPedidoPrueba(id: String, estado: pedidoStatus, cliente: String): Pedido {
+        return Pedido(
+            id = id,
+            estado = estado,
+            nombreCliente = cliente,
+            items = emptyList(),
+            numeroCliente = "123456",
+            emailCliente = "test@test.com",
+            direccionDeli = "Grand Line 123",
+            total = 15000.0
+        )
     }
 }

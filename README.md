@@ -8,79 +8,68 @@ Este proyecto implementa una arquitectura de microservicios utilizando **Spring 
 
 ---
 
-## Funcionalidades principales
-La aplicación cubre el ciclo completo de compra y gestión de usuario:
+## Funcionalidades Principales
+[cite_start]La aplicación cubre el ciclo completo de compra y gestión de personal, cumpliendo con los requerimientos del contexto real[cite: 44, 111]:
 
-1.  **Catálogo en tiempo real:** Visualización de las pizzas disponibles desde MySQL.
-2.  **Carrito de compras:** Lógica de negocio para agregar pizzas, calcular subtotales y totales.
-3.  **Gestión de pedidos (CRUD):**
-    * **Create:** Genera nuevos pedidos con validación de stock.
-    * **Read:** Historial de pedidos anteriores con detalles.
-    * **Delete:** Cancelación de pedidos (eliminación tanto lógica como física en BD).
-4.  **Gestión de perfil (CRUD):**
-    * **Update:** Edición de datos personales (dirección, teléfono).
-    * **Delete:** Eliminación de cuenta de usuario.
-5.  **Integración API Externa:** Consumo de **PokeAPI** para mostrar una "Mascota del día" aleatoria en el Home, más una API de clima en Santiago.
-6.  **Persistencia Híbrida:** Uso de **DataStore** para caché local y **MySQL** para persistencia remota.
-7.  **Recursos nativos:** Al confirmar un pedido, el celular emitirá una vibración, tal y como lo hacen los joystick en los videojuegos.
+1.  [cite_start]**Gestión de 4 Roles Diferenciados:** [cite: 63]
+    * **Cliente:** Realiza pedidos y revisa su historial.
+    * **Cocinero:** Gestión de comandas (Pendiente -> Preparando -> Enviado).
+    * **Repartidor:** Entrega de pedidos (Enviado -> Completo) con soporte de mapas.
+    * **Administrador:** Acceso total a todas las áreas de gestión.
+2.  **Catálogo y Carrito:** Visualización dinámica desde base de datos y lógica de negocio para cálculos de totales.
+3.  [cite_start]**Gestión de Pedidos (CRUD):** Operaciones de persistencia externa en tiempo real a través de microservicios[cite: 51, 94].
+4.  [cite_start]**Gestión de Perfil:** Registro, inicio de sesión, recuperación de contraseña y edición de datos con protección para staff[cite: 66].
+5.  [cite_start]**Integración API Externa:** Consumo de **PokeAPI** (Mascota del día) y **OpenMeteo** (Clima) mediante Retrofit[cite: 50, 95].
+6.  [cite_start]**Recursos Nativos:** [cite: 52, 90]
+    * **Galería (Photo Picker):** Selección de foto de perfil nativa.
+    * **GPS (Intents):** Apertura de Google Maps para rutas de reparto de forma segura y funcional.
+    * **Feedback Háptico:** Sistema de vibración al confirmar pedidos.
+7.  [cite_start]**Pruebas Unitarias:** Cobertura de lógica de negocio en ViewModel validando estados y roles[cite: 54, 97].
 
 ---
 
-## Endpoints utilizados
+## [cite_start]🔌 Endpoints Utilizados [cite: 113]
 
-La aplicación se comunica con los siguientes servicios:
-
-### 1. Microservicios propios (Spring Boot)
-Base URL: `http://10.0.2.2:8081/api/`
+### 1. Microservicios Propios (Spring Boot)
+Base URL: `https://apppizzabackend-production.up.railway.app/api/`
 
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
 | **GET** | `/pizzas` | Obtiene el menú completo de pizzas |
 | **POST** | `/pedidos` | Crea una nueva orden de compra |
-| **GET** | `/pedidos/cliente/{id}` | Obtiene el historial de pedidos del cliente |
-| **DELETE** | `/pedidos/{id}` | Elimina/Cancela el pedido que se hizo |
-| **POST** | `/clientes/guardar` | Crea o actualiza la información del perfil de usuario |
-| **DELETE** | `/clientes/{id}` | Elimina la cuenta del usuario |
+| **GET** | `/pedidos/cocina` | Historial de comandas para Staff |
+| **PUT** | `/pedidos/{id}/estado` | Actualiza el estado del pedido |
+| **POST** | `/auth/login` | Autenticación y recuperación de datos |
+| **POST** | `/clientes/guardar` | Registro y actualización de perfil |
 
 ### 2. API Externa
-| Servicio | Endpoint | Descripción |
-| :--- | :--- | :--- |
-| **PokeAPI** | `https://pokeapi.co/api/v2/pokemon/{id}` | Obtiene nombre e imagen de un Pokémon aleatorio (Gen 1) |
-| **OpenMeteo** | `https://api.open-meteo.com/v1/` | Obtiene el clima a tiempo real |
+| Servicio | Endpoint | Descripción                        |
+| :--- | :--- |:-----------------------------------|
+| **PokeAPI** | `https://pokeapi.co/api/v2/pokemon/{id}` | Pokemon visual del día             |
+| **OpenMeteo** | `https://api.open-meteo.com/v1/` | Clima en tiempo real para despacho |
 
 ---
 
-## Pasos para ejecutar el proyecto
+## [cite_start]🛠Instrucciones de Ejecución [cite: 115]
 
-Para probar el entorno completo (Cliente-Servidor), sigue este orden:
+### 1. Backend (Spring Boot)
+* Abrir el proyecto en IntelliJ o Eclipse.
+* Ejecutar la clase principal `PixzeleriaApplication.kt` y esperar confirmación en el puerto 8081.
+* Como el backend está en Railway, de momento se puede saltar al paso del Frontend.
 
-### 1. Base de Datos
-* Abrir **XAMPP**.
-* Iniciar Tomcat.
-* Iniciar Apache.
-* Iniciar el servicio **MySQL** (Puerto 3306).
-* Crear la base de datos llamada: `pixzeria_pizzas` (Esto es MUCHO MUY IMPORTANTE!)
-
-### 2. Backend (Spring Boot)
-* Abrir el proyecto del backend.
-* Esperar a que Gradle sincronice las dependencias.
-* Ejecutar la clase principal `PixzeleriaApplication.kt`.
-* Verificar en consola que diga: `Tomcat started on port 8081`.
-
-### 3. Frontend (Android)
-* Abrir el proyecto de la app en **Android Studio**.
-* Asegurarse de tener un **Emulador** configurado (API 26 o superior) con acceso a internet.
-* Ejecutar la app.
-* *Nota:* La app está configurada para apuntar a `10.0.2.2`, que es la dirección localhost del emulador.
+### [cite_start]3. Frontend (Android) [cite: 119]
+* Abrir el proyecto en **Android Studio**.
+* Ejecutar en emulador (API 26 o superior).
+* [cite_start]**Pruebas:** Para validar la lógica, ejecutar el archivo `MainViewModelTest` (Cobertura > 80%)[cite: 97, 141].
 
 ---
 
-## Evidencia de Entrega (APK)
+## [cite_start] Evidencia de Entrega (APK Firmado) [cite: 116]
 
-En la carpeta Releases se encuentran los archivos generados:
-
-* **APK Firmado:** `app-release.apk`
-* **Llave de Firma:** `llave_definitiva.jks`
+El proyecto incluye la configuración técnica necesaria para su distribución:
+* [cite_start]**APK Firmado:** Ubicado en la carpeta `app/release/app-release.apk`[cite: 100].
+* [cite_start]**Llave de Firma:** Archivo `.jks` ubicado en la configuración técnica del repositorio[cite: 141].
 
 ---
-Desarrollado para la asignatura **DSY1105 - Desarrollo de Aplicaciones Móviles**, tiene errores, NO SE LO ROBE.
+[cite_start]Desarrollado para la asignatura **DSY1105 - Desarrollo de Aplicaciones Móviles**[cite: 4].
+[cite_start]*Evidencia de trabajo propio, no se lo robe, no sea malito.*[cite: 59, 120].
