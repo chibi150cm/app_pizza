@@ -24,7 +24,9 @@ data class PedidoResponse(
     val total: Double,
     val estado: String,
     val fecha: String? = null,
+    @SerializedName("direccion")
     val direccion: String? = null,
+    @SerializedName("nombreCliente")
     val nombreCliente: String? = null,
     val items: List<ItemPedidoResponse> = emptyList()
 )

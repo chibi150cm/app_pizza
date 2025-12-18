@@ -71,6 +71,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lista.filter { it.estado == pedidoStatus.ENVIADO }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+
     // Cálculos carrito
     val carroTotal: StateFlow<Double> = _carro.map { items -> items.sumOf { it.subtotal } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
@@ -127,25 +128,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (storedUser.email.isNotEmpty()) {
                     _isLoggedIn.value = true
-
                     val rol = storedUser.rol
-                    val permisoStaff = (rol == "COCINERO" || rol == "ADMIN" || rol == "REPARTIDOR")
 
-                    if (permisoStaff) {
+                    val esStaff = (rol == "COCINERO" || rol == "REPARTIDOR" || rol == "ADMIN")
+                    if (esStaff) {
                         cargarPedidosCocina()
                     }
+                    val esAdminUser = (rol == "ADMIN")
+                    val tieneCocina = (rol == "COCINERO" || esAdminUser)
+                    val tieneReparto = (rol == "REPARTIDOR" || esAdminUser)
 
-                    _esAdmin.value = (rol == "ADMIN")
+                    _esAdmin.value = esAdminUser
+                    _tienePermisoCocina.value = tieneCocina
+                    _esRepartidor.value = tieneReparto
 
-                    val permisoCocina = (rol == "COCINERO" || rol == "ADMIN")
-                    _tienePermisoCocina.value = permisoCocina
-
-                    val permisoReparto = (rol == "REPARTIDOR" || rol == "ADMIN")
-                    _esRepartidor.value = permisoReparto
-
-
-
-                    if (permisoCocina || permisoReparto) {
+                    if (tieneCocina || tieneReparto) {
                         cargarPedidosCocina()
                     }
 
@@ -158,6 +155,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _tienePermisoCocina.value = false
                     _esRepartidor.value = false
                     _pedidos.value = emptyList()
+                    _pedidosCocina.value = emptyList()
                 }
             }
         }
@@ -443,7 +441,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         nombreCliente = p.nombreCliente ?: "Pedido #${p.id}",
                         numeroCliente = "",
                         emailCliente = "",
-                        direccionDeli = p.direccion ?: "Sin dirección registrada",
+                        direccionDeli = p.direccion ?: "Sin dirección",
                         items = p.items.map { item ->
                             Carrito(
                                 pizza = Pizza(id="0", nombrePizza=item.nombrePizza, precio=item.precio, descripcion="", imagenUrl="", categoria=""),
