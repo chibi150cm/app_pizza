@@ -230,6 +230,7 @@ fun PedidoStatus(status: pedidoStatus) {
         pedidoStatus.PENDIENTE -> "Pendiente" to MaterialTheme.colorScheme.secondary
         pedidoStatus.CONFIRMADO -> "Confirmado" to MaterialTheme.colorScheme.tertiary
         pedidoStatus.PREPARANDO -> "En preparación" to MaterialTheme.colorScheme.tertiary
+        pedidoStatus.TERMINADO -> "Listo para entregar" to MaterialTheme.colorScheme.tertiary
         pedidoStatus.ENVIADO -> "En camino" to MaterialTheme.colorScheme.primary
         pedidoStatus.COMPLETO -> "Entregado" to MaterialTheme.colorScheme.tertiary
         pedidoStatus.CANCELADO -> "Cancelado" to MaterialTheme.colorScheme.error

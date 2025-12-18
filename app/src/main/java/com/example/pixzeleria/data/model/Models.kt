@@ -40,7 +40,7 @@ data class Pedido(
 ) : Parcelable
 
 enum class pedidoStatus {
-    PENDIENTE, CONFIRMADO, PREPARANDO, ENVIADO, COMPLETO, CANCELADO
+    PENDIENTE, CONFIRMADO, PREPARANDO, TERMINADO, ENVIADO, COMPLETO, CANCELADO
 }
 
 data class User(

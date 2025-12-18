@@ -68,7 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val esRepartidor: StateFlow<Boolean> = _esRepartidor.asStateFlow()
 
     val pedidosReparto: StateFlow<List<Pedido>> = _pedidosCocina.map { lista ->
-        lista.filter { it.estado == com.example.pixzeleria.data.model.pedidoStatus.ENVIADO }
+        lista.filter { it.estado.name.equals("ENVIADO", ignoreCase = true) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Cálculos carrito
@@ -129,6 +129,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _isLoggedIn.value = true
 
                     val rol = storedUser.rol
+                    val permisoStaff = (rol == "COCINERO" || rol == "ADMIN" || rol == "REPARTIDOR")
+
+                    if (permisoStaff) {
+                        cargarPedidosCocina()
+                    }
 
                     _esAdmin.value = (rol == "ADMIN")
 
@@ -137,6 +142,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     val permisoReparto = (rol == "REPARTIDOR" || rol == "ADMIN")
                     _esRepartidor.value = permisoReparto
+
+
 
                     if (permisoCocina || permisoReparto) {
                         cargarPedidosCocina()
@@ -422,27 +429,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun cargarPedidosCocina() {
         viewModelScope.launch {
             try {
+                // 1. Traemos los pedidos. Retrofit devuelve una lista de objetos según tu interfaz ApiService.
                 val pedidosBackend = RetrofitClient.instance.obtenerTodosLosPedidos()
+
                 val pedidosUi = pedidosBackend.map { p ->
                     Pedido(
-                        id = p.id.toString(),
-                        total = p.total,
-                        estado = try { pedidoStatus.valueOf(p.estado) } catch (e: Exception) { pedidoStatus.PENDIENTE },
+                        id = p.id.toString(), // Usas el id del backend
+                        total = p.total,      // Usas el total del backend
+                        estado = try {
+                            pedidoStatus.valueOf(p.estado.uppercase())
+                        } catch (e: Exception) {
+                            pedidoStatus.PENDIENTE
+                        },
                         fecha = System.currentTimeMillis(),
-                        nombreCliente = "Cliente de App",
+                        nombreCliente = "Cliente #${p.id}",
                         numeroCliente = "",
                         emailCliente = "",
-                        direccionDeli = "",
+                        direccionDeli = p.direccion ?: "Dirección no especificada",
+
                         items = p.items.map { item ->
                             Carrito(
-                                Pizza(id="0", nombrePizza=item.nombrePizza, descripcion="", precio=item.precio, imagenUrl="", categoria=""),
+                                Pizza(
+                                    id = "0",
+                                    nombrePizza = item.nombrePizza,
+                                    precio = item.precio,
+                                    descripcion = "",
+                                    imagenUrl = "",
+                                    categoria = ""
+                                ),
                                 cantidad = item.cantidad
                             )
                         }
                     )
                 }
                 _pedidosCocina.value = pedidosUi.reversed()
-
             } catch (e: Exception) {
                 Log.e("API", "Error cargando cocina: ${e.message}")
                 _pedidosCocina.value = emptyList()

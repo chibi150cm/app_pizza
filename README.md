@@ -64,7 +64,7 @@ Base URL: `https://apppizzabackend-production.up.railway.app/api/`
 
 ---
 
-## Evidencia de Entrega (APK Firmado) [cite: 116]
+## Evidencia de Entrega (APK Firmado)
 
 El proyecto incluye la configuración técnica necesaria para su distribución:
 * **APK Firmado:** Ubicado en la carpeta `app/release/app-release.apk`.
