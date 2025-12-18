@@ -29,4 +29,14 @@ interface ApiService {
 
     @POST("clientes/registro")
     suspend fun registrar(@Body usuario: User): Response<User>
+
+    @GET("pedidos")
+    suspend fun obtenerTodosLosPedidos(): List<PedidoResponse>
+
+    @PUT("pedidos/{id}/estado")
+    suspend fun actualizarEstado(
+        @Path("id") id: Long,
+        @Body body: Map<String, String>
+    ): Response<PedidoResponse>
+
 }

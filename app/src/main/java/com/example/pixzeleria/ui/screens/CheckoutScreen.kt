@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -60,9 +61,15 @@ fun CheckoutScreen(
     var mostrarConfirmacion by remember { mutableStateOf(false) }
     var enProceso by remember { mutableStateOf(false) }
 
+    val infoDescuento by viewModel.calculoDescuento.collectAsState()
+    val (montoDescuento, totalConDescuento) = infoDescuento
+
+    var soyGamer by remember { mutableStateOf(false) }
+
     fun vibrarCelular() {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibratorManager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
@@ -78,7 +85,12 @@ fun CheckoutScreen(
     }
 
     fun formularioValidacion(): Boolean {
-        val validaciones = formularioValidacion.validarCheckout(nombreUsuario, emailUsuario, telefonoUsuario, direccionUsuario)
+        val validaciones = formularioValidacion.validarCheckout(
+            nombreUsuario,
+            emailUsuario,
+            telefonoUsuario,
+            direccionUsuario
+        )
 
         nomusuError = validaciones["name"]?.toErrorMessage()
         emailError = validaciones["email"]?.toErrorMessage()
@@ -89,6 +101,7 @@ fun CheckoutScreen(
     }
 
     if (mostrarConfirmacion) {
+        val totalFinalAPagar = totalConDescuento + 2500
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
@@ -99,6 +112,13 @@ fun CheckoutScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Documento: $tipoDocumento", style = MaterialTheme.typography.bodySmall)
                     Text("Envío a: $direccionUsuario", style = MaterialTheme.typography.bodySmall)
+                    if (montoDescuento > 0) {
+                        Text(
+                            "¡Incluye descuento Gamer!",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFF4CAF50)
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -177,8 +197,15 @@ fun CheckoutScreen(
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         isError = nomusuError != null,
                         supportingText = nomusuError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(
+                                FocusDirection.Down
+                            )
+                        }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -190,8 +217,15 @@ fun CheckoutScreen(
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         isError = emailError != null,
                         supportingText = emailError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(
+                                FocusDirection.Down
+                            )
+                        }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -203,8 +237,15 @@ fun CheckoutScreen(
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                         isError = telefonoError != null,
                         supportingText = telefonoError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(
+                                FocusDirection.Down
+                            )
+                        }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -216,8 +257,15 @@ fun CheckoutScreen(
                         leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
                         isError = direccionError != null,
                         supportingText = direccionError?.let { { Text(it) } },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(
+                                FocusDirection.Down
+                            )
+                        }),
                         minLines = 2,
                         maxLines = 3,
                         modifier = Modifier.fillMaxWidth()
@@ -227,9 +275,17 @@ fun CheckoutScreen(
                         value = instruccionEspecial,
                         onValueChange = { instruccionEspecial = it },
                         label = { Text("Instrucciones especiales") },
-                        leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
-                        placeholder = { Text("Ej: Sin cebolla, timbre roto") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Description,
+                                contentDescription = null
+                            )
+                        },
+                        placeholder = { Text("Ej: Sin cebolla, el timbre está malo, etc") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                         minLines = 3,
                         maxLines = 5,
@@ -246,7 +302,11 @@ fun CheckoutScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Tipo de Documento", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Tipo de Documento",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -264,6 +324,54 @@ fun CheckoutScreen(
                         )
                         Text("Factura", modifier = Modifier.padding(start = 8.dp))
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Descuento
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = "¿Eres Gamer/Otaku?",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Text(
+                            text = "¡Activa el Switch para un descuento especial! ;3",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                    Switch(
+                        checked = soyGamer,
+                        onCheckedChange = {
+                            soyGamer = it
+                            viewModel.alternarDescuento(it)
+                        },
+                        thumbContent = if (soyGamer) {
+                            {
+                                Icon(
+                                    Icons.Default.VideogameAsset,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        } else null
+                    )
                 }
             }
 
@@ -293,11 +401,33 @@ fun CheckoutScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Subtotal:", style = MaterialTheme.typography.bodyLarge)
+                        Text("Subtotal Pizzas:", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             formatoNumero.format(carroTotal),
                             style = MaterialTheme.typography.bodyLarge
                         )
+                    }
+
+                    // Fila de descuento en caso de que aplique
+                    if (montoDescuento > 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Descuento Gamer:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "- ${formatoNumero.format(montoDescuento)}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -330,7 +460,8 @@ fun CheckoutScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            formatoNumero.format(carroTotal + 2500),
+                            // Calculamos las pizzas, menos descuento, más delivery
+                            formatoNumero.format(totalConDescuento + 2500),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -368,7 +499,6 @@ fun CheckoutScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(56.dp),
-                // Solo habilitado si no está cargando y si se aceptó los términos
                 enabled = !enProceso && aceptaTerminos
             ) {
                 if (enProceso) {

@@ -97,7 +97,7 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Categorias()
 

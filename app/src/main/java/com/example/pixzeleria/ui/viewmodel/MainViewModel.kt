@@ -6,6 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pixzeleria.data.model.*
 import com.example.pixzeleria.data.local.DataStoreManager
+import com.example.pixzeleria.logic.DescuentoGamer
+import com.example.pixzeleria.logic.DescuentoStrategy
+import com.example.pixzeleria.logic.SinDescuento
 import com.example.pixzeleria.network.DetallePedidoRequest
 import com.example.pixzeleria.network.PedidoRequest
 import com.example.pixzeleria.network.RetrofitClient
@@ -14,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -53,14 +55,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _esAdmin = MutableStateFlow(false)
     val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
 
+    private val _tienePermisoCocina = MutableStateFlow(false)
+    val tienePermisoCocina: StateFlow<Boolean> = _tienePermisoCocina.asStateFlow()
+
+    private val _pedidosCocina = MutableStateFlow<List<Pedido>>(emptyList())
+    val pedidosCocina: StateFlow<List<Pedido>> = _pedidosCocina.asStateFlow()
+
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    // Cálculos carrito
     val carroTotal: StateFlow<Double> = _carro.map { items -> items.sumOf { it.subtotal } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     val cartItemCount: StateFlow<Int> = _carro.map { items -> items.sumOf { it.cantidad } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    // Descuento (aquí le puse polimorfismo, pa que no se me olvide que aquí era XD)
+    private val _politicaDescuento = MutableStateFlow<DescuentoStrategy>(SinDescuento())
+    val politicaDescuento = _politicaDescuento.asStateFlow()
+
+    // Login
+    private val _loginRol = MutableStateFlow<String?>(null)
+    val loginRol: StateFlow<String?> = _loginRol.asStateFlow()
+
+    val calculoDescuento: StateFlow<Pair<Double, Double>> =
+        combine(_carro, _politicaDescuento) { listaCarro, politica ->
+            val subtotal = listaCarro.sumOf { it.subtotal }
+            val descuento = politica.calcularDescuento(subtotal)
+            val totalFinal = if (subtotal - descuento < 0) 0.0 else subtotal - descuento
+
+            Pair(descuento, totalFinal) // Retorna: (MontoDescuento, PrecioConDescuento)
+        }.stateIn(viewModelScope, SharingStarted.Lazily, Pair(0.0, 0.0))
 
     init {
         loadInitialData()
@@ -90,21 +116,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             dataStoreManager.usuarioFlow.collect { storedUser ->
                 _usuario.value = storedUser
+
                 if (storedUser.email.isNotEmpty()) {
                     _isLoggedIn.value = true
-                    _esAdmin.value = (storedUser.rol == "ADMIN")
+
+                    val rol = storedUser.rol
+
+                    _esAdmin.value = (rol == "ADMIN")
+
+                    val puedeEntrarCocina = (rol == "COCINERO" || rol == "ADMIN")
+                    _tienePermisoCocina.value = puedeEntrarCocina
+
+                    if (puedeEntrarCocina) {
+                        cargarPedidosCocina()
+                    }
 
                     if (storedUser.id != null) {
                         cargarHistorialReal()
                     }
                 } else {
+                    // Si no hay usuario, apagamos todo
                     _isLoggedIn.value = false
                     _esAdmin.value = false
+                    _tienePermisoCocina.value = false
                     _pedidos.value = emptyList()
                 }
             }
         }
-
         viewModelScope.launch { dataStoreManager.favoritasFlow.collect { _favoritas.value = it } }
     }
 
@@ -150,11 +188,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val usuarioVacio = User()
             guardarUsuario(usuarioVacio)
+            _politicaDescuento.value = SinDescuento() // Reiniciar descuento al salir
         }
     }
 
     // Gestión del perfil
-
     fun guardarUsuario(user: User) {
         viewModelScope.launch { dataStoreManager.guardarUsuario(user) }
     }
@@ -180,7 +218,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val miId = _usuario.value.id
                 if (miId != null) {
                     val response = RetrofitClient.instance.eliminarCliente(miId)
-                    if(response.isSuccessful) Log.d("API", "Cuenta eliminada")
+                    if (response.isSuccessful) Log.d("API", "Cuenta eliminada")
                 }
             } catch (e: Exception) {
                 Log.e("API", "Error borrando: ${e.message}")
@@ -191,7 +229,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Gestión de los pedidos
-
     fun cargarHistorialReal() {
         viewModelScope.launch {
             try {
@@ -204,7 +241,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         Pedido(
                             id = p.id.toString(),
                             total = p.total,
-                            estado = try { pedidoStatus.valueOf(p.estado) } catch (e: Exception) { pedidoStatus.PENDIENTE },
+                            estado = try {
+                                pedidoStatus.valueOf(p.estado)
+                            } catch (e: Exception) {
+                                pedidoStatus.PENDIENTE
+                            },
                             fecha = System.currentTimeMillis(),
                             nombreCliente = _usuario.value.nombre,
                             numeroCliente = _usuario.value.telefono,
@@ -212,7 +253,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             direccionDeli = _usuario.value.direccion,
                             items = p.items.map { item ->
                                 Carrito(
-                                    pizza = Pizza(id="0", nombrePizza=item.nombrePizza, descripcion="", precio=item.precio, imagenUrl="", categoria=""),
+                                    pizza = Pizza(
+                                        id = "0",
+                                        nombrePizza = item.nombrePizza,
+                                        descripcion = "",
+                                        precio = item.precio,
+                                        imagenUrl = "",
+                                        categoria = ""
+                                    ),
                                     cantidad = item.cantidad
                                 )
                             }
@@ -271,6 +319,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val lista = _pedidos.value.toMutableList()
                         lista.removeAll { it.id == pedidoId }
                         _pedidos.value = lista
+                        cargarPedidosCocina()
                     }
                 }
             } catch (e: Exception) {
@@ -320,26 +369,92 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun esFavorita(pizzaId: String): Boolean = _favoritas.value.contains(pizzaId)
 
+    // Switch descuento
+    fun alternarDescuento(esGamer: Boolean) {
+        _politicaDescuento.value = if (esGamer) DescuentoGamer() else SinDescuento()
+    }
+
     // APIS de Pokemon y Clima
     fun cargarClima() {
         viewModelScope.launch {
             try {
-                val response = com.example.pixzeleria.network.ClimaRetrofitClient.instance.obtenerClima(-33.4489, -70.6693)
-                if (response.isSuccessful) _temperatura.value = response.body()?.currentWeather?.temperature
-            } catch (e: Exception) { Log.e("API", "Error clima") }
+                val response =
+                    com.example.pixzeleria.network.ClimaRetrofitClient.instance.obtenerClima(
+                        -33.4489,
+                        -70.6693
+                    )
+                if (response.isSuccessful) _temperatura.value =
+                    response.body()?.currentWeather?.temperature
+            } catch (e: Exception) {
+                Log.e("API", "Error clima")
+            }
         }
     }
 
     fun cargarMascotaDelDia() {
         viewModelScope.launch {
             try {
-                val response = com.example.pixzeleria.network.PokeRetrofitClient.instance.obtenerPokemon((1..151).random())
+                val response =
+                    com.example.pixzeleria.network.PokeRetrofitClient.instance.obtenerPokemon((1..151).random())
                 if (response.isSuccessful) {
                     val p = response.body()
                     _pokemonNombre.value = p?.name?.replaceFirstChar { it.uppercase() } ?: ""
                     _pokemonImagen.value = p?.sprites?.frontDefault ?: ""
                 }
-            } catch (e: Exception) { Log.e("API", "Error Pokemon") }
+            } catch (e: Exception) {
+                Log.e("API", "Error Pokemon")
+            }
         }
     }
+
+    fun cargarPedidosCocina() {
+        viewModelScope.launch {
+            try {
+                val pedidosBackend = RetrofitClient.instance.obtenerTodosLosPedidos()
+                val pedidosUi = pedidosBackend.map { p ->
+                    Pedido(
+                        id = p.id.toString(),
+                        total = p.total,
+                        estado = try { pedidoStatus.valueOf(p.estado) } catch (e: Exception) { pedidoStatus.PENDIENTE },
+                        fecha = System.currentTimeMillis(),
+                        nombreCliente = "Cliente de App",
+                        numeroCliente = "",
+                        emailCliente = "",
+                        direccionDeli = "",
+                        items = p.items.map { item ->
+                            Carrito(
+                                Pizza(id="0", nombrePizza=item.nombrePizza, descripcion="", precio=item.precio, imagenUrl="", categoria=""),
+                                cantidad = item.cantidad
+                            )
+                        }
+                    )
+                }
+                _pedidosCocina.value = pedidosUi.reversed()
+
+            } catch (e: Exception) {
+                Log.e("API", "Error cargando cocina: ${e.message}")
+                _pedidosCocina.value = emptyList()
+            }
+        }
+    }
+
+    fun cambiarEstadoPedido(pedidoId: String, nuevoEstado: pedidoStatus) {
+        viewModelScope.launch {
+            try {
+                val idLong = pedidoId.toLongOrNull() ?: return@launch
+
+                val body = mapOf("estado" to nuevoEstado.name)
+
+                val response = RetrofitClient.instance.actualizarEstado(idLong, body)
+
+                if (response.isSuccessful) {
+                    cargarPedidosCocina()
+                    cargarHistorialReal()
+                }
+            } catch (e: Exception) {
+                Log.e("API", "Error actualizando estado: ${e.message}")
+            }
+        }
+    }
+
 }

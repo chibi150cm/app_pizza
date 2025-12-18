@@ -15,6 +15,10 @@ sealed class Screen(val route: String, val title: String) {
         fun createRoute(pizzaId: String) = "pizza/$pizzaId"
     }
     object Checkout : Screen("checkout", "Finalizar Pedido")
+
+    object Cocinero : Screen("cocinero", "Cocina")
+    object Repartidor : Screen("repartidor", "Reparto")
+
 }
 
 sealed class BottomNavItem(

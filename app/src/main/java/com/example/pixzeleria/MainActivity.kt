@@ -22,11 +22,13 @@ import com.example.pixzeleria.ui.navigation.Screen
 import com.example.pixzeleria.ui.navigation.bottomNavItems
 import com.example.pixzeleria.ui.screens.CarritoScreen
 import com.example.pixzeleria.ui.screens.CheckoutScreen
+import com.example.pixzeleria.ui.screens.CocineroScreen
 import com.example.pixzeleria.ui.screens.HomeScreen
 import com.example.pixzeleria.ui.screens.MenuScreen
 import com.example.pixzeleria.ui.screens.PedidosScreen
 import com.example.pixzeleria.ui.screens.DetallesPizzaScreen
 import com.example.pixzeleria.ui.screens.PerfilScreen
+import com.example.pixzeleria.ui.screens.RepartidorScreen
 import com.example.pixzeleria.ui.theme.PixzeleriaTheme
 import com.example.pixzeleria.ui.viewmodel.MainViewModel
 
@@ -152,7 +154,12 @@ fun MainScreen(viewModel: MainViewModel) {
             composable(Screen.Profile.route) {
                 PerfilScreen(
                     viewModel = viewModel,
-                    onNavigateToOrders = { navController.navigate(Screen.Orders.route) }
+                    onNavigateToOrders = {
+                        navController.navigate(Screen.Orders.route)
+                    },
+                    onNavigateToCocina = {
+                        navController.navigate(Screen.Cocinero.route)
+                    }
                 )
             }
 
@@ -186,6 +193,21 @@ fun MainScreen(viewModel: MainViewModel) {
                     },
                     onNavigateBack = { navController.navigateUp() }
                 )
+            }
+
+            composable(Screen.Cocinero.route) {
+                CocineroScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.navigateUp() }
+                )
+
+                LaunchedEffect(Unit) {
+                    viewModel.cargarPedidosCocina()
+                }
+            }
+
+            composable(Screen.Repartidor.route) {
+                RepartidorScreen(navController)
             }
         }
     }

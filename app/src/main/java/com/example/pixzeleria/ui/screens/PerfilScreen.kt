@@ -6,8 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,12 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.pixzeleria.data.model.User
@@ -33,19 +28,20 @@ import kotlinx.coroutines.delay
 @Composable
 fun PerfilScreen(
     viewModel: MainViewModel,
-    onNavigateToOrders: () -> Unit
+    onNavigateToOrders: () -> Unit,
+    onNavigateToCocina: () -> Unit
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
     // INTERRUPTOR DE VISTAS
     if (isLoggedIn) {
-        PerfilLogueadoView(viewModel, onNavigateToOrders)
+        PerfilLogueadoView(viewModel, onNavigateToOrders, onNavigateToCocina)
     } else {
         PerfilLoginView(viewModel)
     }
 }
 
-// --- VISTA 1: FORMULARIO DE LOGIN / REGISTRO ---
+// Formulario lgoin/regsitro
 @Composable
 fun PerfilLoginView(viewModel: MainViewModel) {
     val error by viewModel.loginError.collectAsState()
@@ -152,15 +148,19 @@ fun PerfilLoginView(viewModel: MainViewModel) {
     }
 }
 
-// Vista Usuario
+// Vista usuario logueado
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerfilLogueadoView(viewModel: MainViewModel, onNavigateToOrders: () -> Unit) {
+fun PerfilLogueadoView(
+    viewModel: MainViewModel,
+    onNavigateToOrders: () -> Unit,
+    onNavigateToCocina: () -> Unit
+) {
     val usuario by viewModel.usuario.collectAsState()
     val pedidos by viewModel.pedidos.collectAsState()
     val favoritos by viewModel.favoritas.collectAsState()
     val esAdmin by viewModel.esAdmin.collectAsState()
-    val focusManager = LocalFocusManager.current
+    val tienePermisoCocina by viewModel.tienePermisoCocina.collectAsState()
 
     var editando by remember { mutableStateOf(false) }
     var nombreU by remember { mutableStateOf(usuario.nombre) }
@@ -296,7 +296,6 @@ fun PerfilLogueadoView(viewModel: MainViewModel, onNavigateToOrders: () -> Unit)
                         enabled = editando, isError = nombreError != null,
                         modifier = Modifier.fillMaxWidth(), singleLine = true
                     )
-                    // Email y teléfono opcionales
                     OutlinedTextField(
                         value = emailU, onValueChange = { emailU = it; emailError = null },
                         label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) },
@@ -318,31 +317,56 @@ fun PerfilLogueadoView(viewModel: MainViewModel, onNavigateToOrders: () -> Unit)
                 }
             }
 
-            // Interruptor de admin
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if(esAdmin) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Admin
+            if (tienePermisoCocina) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        // Diferente color para que el Admin se sienta especial
+                        containerColor = if(esAdmin) MaterialTheme.colorScheme.tertiaryContainer
+                        else MaterialTheme.colorScheme.secondaryContainer
+                    )
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (esAdmin) "Modo: PIXI-ADMIN" else "Rol: PIXI-CLIENTE",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (esAdmin) "Menú de gestión habilitado" else "Bienvenido a la familia Pixzelería",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                // TEXTO DINÁMICO: Reconoce quién eres
+                                Text(
+                                    text = if (esAdmin) "Modo: GERENCIA (ZEFF)" else "Modo: COCINA (SANJI)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (esAdmin) "Administración total y acceso a cocina"
+                                    else "Panel de comandas habilitado",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Icon(
+                                imageVector = if(esAdmin) Icons.Default.VerifiedUser else Icons.Default.Restaurant,
+                                contentDescription = null
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // EL BOTÓN QUE AMBOS PUEDEN VER
+                        Button(
+                            onClick = onNavigateToCocina,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.RestaurantMenu, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("ENTRAR A COCINA")
+                        }
                     }
-                    // Icono informativo
-                    Icon(if(esAdmin) Icons.Default.VerifiedUser else Icons.Default.Person, null)
                 }
             }
 
