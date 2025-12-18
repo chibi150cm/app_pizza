@@ -159,7 +159,8 @@ fun MainScreen(viewModel: MainViewModel) {
                     },
                     onNavigateToCocina = {
                         navController.navigate(Screen.Cocinero.route)
-                    }
+                    },
+                    onNavigateToReparto = { navController.navigate(Screen.Repartidor.route) }
                 )
             }
 
@@ -207,7 +208,10 @@ fun MainScreen(viewModel: MainViewModel) {
             }
 
             composable(Screen.Repartidor.route) {
-                RepartidorScreen(navController)
+                RepartidorScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.navigateUp() }
+                )
             }
         }
     }

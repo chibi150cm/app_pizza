@@ -64,6 +64,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    private val _esRepartidor = MutableStateFlow(false)
+    val esRepartidor: StateFlow<Boolean> = _esRepartidor.asStateFlow()
+
+    val pedidosReparto: StateFlow<List<Pedido>> = _pedidosCocina.map { lista ->
+        lista.filter { it.estado == com.example.pixzeleria.data.model.pedidoStatus.ENVIADO }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Cálculos carrito
     val carroTotal: StateFlow<Double> = _carro.map { items -> items.sumOf { it.subtotal } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
@@ -85,7 +92,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val descuento = politica.calcularDescuento(subtotal)
             val totalFinal = if (subtotal - descuento < 0) 0.0 else subtotal - descuento
 
-            Pair(descuento, totalFinal) // Retorna: (MontoDescuento, PrecioConDescuento)
+            Pair(descuento, totalFinal)
         }.stateIn(viewModelScope, SharingStarted.Lazily, Pair(0.0, 0.0))
 
     init {
@@ -113,6 +120,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun observeDataStore() {
         viewModelScope.launch { dataStoreManager.carritoFlow.collect { _carro.value = it } }
+
         viewModelScope.launch {
             dataStoreManager.usuarioFlow.collect { storedUser ->
                 _usuario.value = storedUser
@@ -124,10 +132,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     _esAdmin.value = (rol == "ADMIN")
 
-                    val puedeEntrarCocina = (rol == "COCINERO" || rol == "ADMIN")
-                    _tienePermisoCocina.value = puedeEntrarCocina
+                    val permisoCocina = (rol == "COCINERO" || rol == "ADMIN")
+                    _tienePermisoCocina.value = permisoCocina
 
-                    if (puedeEntrarCocina) {
+                    val permisoReparto = (rol == "REPARTIDOR" || rol == "ADMIN")
+                    _esRepartidor.value = permisoReparto
+
+                    if (permisoCocina || permisoReparto) {
                         cargarPedidosCocina()
                     }
 
@@ -135,14 +146,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         cargarHistorialReal()
                     }
                 } else {
-                    // Si no hay usuario, apagamos todo
                     _isLoggedIn.value = false
                     _esAdmin.value = false
                     _tienePermisoCocina.value = false
+                    _esRepartidor.value = false
                     _pedidos.value = emptyList()
                 }
             }
         }
+
         viewModelScope.launch { dataStoreManager.favoritasFlow.collect { _favoritas.value = it } }
     }
 

@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -24,18 +23,25 @@ import com.example.pixzeleria.ui.viewmodel.MainViewModel
 import com.example.pixzeleria.utils.formularioValidacion
 import com.example.pixzeleria.utils.toErrorMessage
 import kotlinx.coroutines.delay
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import android.net.Uri
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun PerfilScreen(
     viewModel: MainViewModel,
     onNavigateToOrders: () -> Unit,
-    onNavigateToCocina: () -> Unit
+    onNavigateToCocina: () -> Unit,
+    onNavigateToReparto: () -> Unit
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
-    // INTERRUPTOR DE VISTAS
     if (isLoggedIn) {
-        PerfilLogueadoView(viewModel, onNavigateToOrders, onNavigateToCocina)
+        PerfilLogueadoView(viewModel, onNavigateToOrders, onNavigateToCocina, onNavigateToReparto)
     } else {
         PerfilLoginView(viewModel)
     }
@@ -154,13 +160,15 @@ fun PerfilLoginView(viewModel: MainViewModel) {
 fun PerfilLogueadoView(
     viewModel: MainViewModel,
     onNavigateToOrders: () -> Unit,
-    onNavigateToCocina: () -> Unit
+    onNavigateToCocina: () -> Unit,
+    onNavigateToReparto: () -> Unit
 ) {
     val usuario by viewModel.usuario.collectAsState()
     val pedidos by viewModel.pedidos.collectAsState()
     val favoritos by viewModel.favoritas.collectAsState()
     val esAdmin by viewModel.esAdmin.collectAsState()
     val tienePermisoCocina by viewModel.tienePermisoCocina.collectAsState()
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
 
     var editando by remember { mutableStateOf(false) }
     var nombreU by remember { mutableStateOf(usuario.nombre) }
@@ -180,6 +188,14 @@ fun PerfilLogueadoView(
         emailU = usuario.email
         telefonoU = usuario.telefono
         direccionU = usuario.direccion
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            imagenUri = uri
+        }
     }
 
     fun validaryGuardar(): Boolean {
@@ -235,7 +251,7 @@ fun PerfilLogueadoView(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Avatar
+            // Aquí está la cosa para ponerle una foto de perfil
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -244,20 +260,38 @@ fun PerfilLogueadoView(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
-                    modifier = Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Person, null, modifier = Modifier.size(60.dp), tint = MaterialTheme.colorScheme.onPrimary)
+                    if (imagenUri != null) {
+                        AsyncImage(
+                            model = imagenUri,
+                            contentDescription = "Foto Perfil",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Person,
+                            null,
+                            modifier = Modifier.size(60.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    usuario.nombre.ifEmpty { "Usuario" },
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                if (usuario.email.isNotEmpty()) {
-                    Text(usuario.email, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Toca para cambiar foto", style = MaterialTheme.typography.labelSmall)
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Botón editar
                 Spacer(modifier = Modifier.height(8.dp))
@@ -317,12 +351,11 @@ fun PerfilLogueadoView(
                 }
             }
 
-            // Admin
+            // Cocina
             if (tienePermisoCocina) {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(
-                        // Diferente color para que el Admin se sienta especial
                         containerColor = if(esAdmin) MaterialTheme.colorScheme.tertiaryContainer
                         else MaterialTheme.colorScheme.secondaryContainer
                     )
@@ -334,7 +367,6 @@ fun PerfilLogueadoView(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                // TEXTO DINÁMICO: Reconoce quién eres
                                 Text(
                                     text = if (esAdmin) "Modo: GERENCIA (ZEFF)" else "Modo: COCINA (SANJI)",
                                     style = MaterialTheme.typography.titleMedium,
@@ -354,7 +386,6 @@ fun PerfilLogueadoView(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // EL BOTÓN QUE AMBOS PUEDEN VER
                         Button(
                             onClick = onNavigateToCocina,
                             modifier = Modifier.fillMaxWidth(),
@@ -372,6 +403,55 @@ fun PerfilLogueadoView(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val esRepartidor by viewModel.esRepartidor.collectAsState()
+
+            if (esRepartidor) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if(esAdmin) MaterialTheme.colorScheme.tertiaryContainer
+                        else MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (esAdmin) "Modo: GERENCIA (ZEFF)" else "Modo: REPARTIDOR (GOD USOPP)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (esAdmin) "Administración total y acceso a repartidor"
+                                    else "Panel de entregas habilitado",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Icon(
+                                imageVector = if(esAdmin) Icons.Default.VerifiedUser else Icons.Default.DeliveryDining,
+                                contentDescription = null
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onNavigateToReparto,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.LocalShipping, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("ENTRAR A REPARTIDOR")
+                        }
+                    }
+                }
+            }
+
             // Opciones de menú
             Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Column {
@@ -383,30 +463,48 @@ fun PerfilLogueadoView(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Eliminar la cuenta
-            var showDeleteDialog by remember { mutableStateOf(false) }
+            val esPersonalStaff = (usuario.rol == "COCINERO" || usuario.rol == "REPARTIDOR")
 
-            if (showDeleteDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text("¿Eliminar Cuenta?") },
-                    text = { Text("Esta acción es permanente.") },
-                    confirmButton = {
-                        Button(onClick = { viewModel.eliminarCuenta(); showDeleteDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Sí, Eliminar") }
-                    },
-                    dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") } }
+            if (!esPersonalStaff || esAdmin) {
+
+                var showDeleteDialog by remember { mutableStateOf(false) }
+
+                if (showDeleteDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        title = { Text("¿Eliminar Cuenta?") },
+                        text = { Text("Esta acción es permanente.") },
+                        confirmButton = {
+                            Button(
+                                onClick = { viewModel.eliminarCuenta(); showDeleteDialog = false },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) { Text("Sí, Eliminar") }
+                        },
+                        dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") } }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(Icons.Default.DeleteForever, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Eliminar mi Cuenta")
+                }
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Cuenta de Staff protegida por la Gerencia.",
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            }
-
-            OutlinedButton(
-                onClick = { showDeleteDialog = true },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-            ) {
-                Icon(Icons.Default.DeleteForever, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Eliminar mi Cuenta")
             }
 
             Spacer(modifier = Modifier.height(32.dp))
