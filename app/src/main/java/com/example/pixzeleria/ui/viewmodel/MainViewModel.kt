@@ -68,7 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val esRepartidor: StateFlow<Boolean> = _esRepartidor.asStateFlow()
 
     val pedidosReparto: StateFlow<List<Pedido>> = _pedidosCocina.map { lista ->
-        lista.filter { it.estado.name.equals("ENVIADO", ignoreCase = true) }
+        lista.filter { it.estado == pedidoStatus.ENVIADO }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Cálculos carrito
@@ -429,34 +429,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun cargarPedidosCocina() {
         viewModelScope.launch {
             try {
-                // 1. Traemos los pedidos. Retrofit devuelve una lista de objetos según tu interfaz ApiService.
                 val pedidosBackend = RetrofitClient.instance.obtenerTodosLosPedidos()
-
                 val pedidosUi = pedidosBackend.map { p ->
                     Pedido(
-                        id = p.id.toString(), // Usas el id del backend
-                        total = p.total,      // Usas el total del backend
+                        id = p.id.toString(),
+                        total = p.total,
                         estado = try {
                             pedidoStatus.valueOf(p.estado.uppercase())
                         } catch (e: Exception) {
                             pedidoStatus.PENDIENTE
                         },
                         fecha = System.currentTimeMillis(),
-                        nombreCliente = "Cliente #${p.id}",
+                        nombreCliente = p.nombreCliente ?: "Pedido #${p.id}",
                         numeroCliente = "",
                         emailCliente = "",
-                        direccionDeli = p.direccion ?: "Dirección no especificada",
-
+                        direccionDeli = p.direccion ?: "Sin dirección registrada",
                         items = p.items.map { item ->
                             Carrito(
-                                Pizza(
-                                    id = "0",
-                                    nombrePizza = item.nombrePizza,
-                                    precio = item.precio,
-                                    descripcion = "",
-                                    imagenUrl = "",
-                                    categoria = ""
-                                ),
+                                pizza = Pizza(id="0", nombrePizza=item.nombrePizza, precio=item.precio, descripcion="", imagenUrl="", categoria=""),
                                 cantidad = item.cantidad
                             )
                         }
@@ -465,7 +455,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _pedidosCocina.value = pedidosUi.reversed()
             } catch (e: Exception) {
                 Log.e("API", "Error cargando cocina: ${e.message}")
-                _pedidosCocina.value = emptyList()
             }
         }
     }

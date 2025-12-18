@@ -25,6 +25,7 @@ data class PedidoResponse(
     val estado: String,
     val fecha: String? = null,
     val direccion: String? = null,
+    val nombreCliente: String? = null,
     val items: List<ItemPedidoResponse> = emptyList()
 )
 
